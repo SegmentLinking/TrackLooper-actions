@@ -97,8 +97,8 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
   cd $CMSSW_VERSION/src
   eval `scramv1 runtime -sh`
-  # Recompile LST in case anything changed in the headers
-  rm ../lib/${SCRAM_ARCH}/libRecoTrackerLST*
+  # Recompile CMSSW in case anything changed in the headers
+  scram b clean
   scram b -j 4
   echo "Running 21034.1 workflow..."
   cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
