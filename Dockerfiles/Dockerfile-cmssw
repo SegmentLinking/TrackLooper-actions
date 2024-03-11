@@ -1,5 +1,5 @@
 FROM cmssw/el8:x86_64
 
-ADD step2_21034.1_10Events.root /data2/segmentlinking/
+ADD step2_21034.1_100Events.root /data2/segmentlinking/
 
 CMD bash

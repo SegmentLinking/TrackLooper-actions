@@ -61,6 +61,15 @@ runs:
     - name: List files in cvmfs to get it started
       run: ls /cvmfs/cms.cern.ch/ > /dev/null
       shell: bash
+    - name: Remove some pre-installed software
+      shell: bash
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
     - name: Build and run in Docker container
       uses: addnab/docker-run-action@v3
       with:
