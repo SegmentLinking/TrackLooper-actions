@@ -14,7 +14,7 @@ fi
 # When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
 COMPARE_TO_MASTER=false
 if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
-  CMSSW_BRANCH=CMSSW_13_3_0_pre3_LST_X
+  CMSSW_BRANCH=CMSSW_14_1_0_pre0_LST_X
   COMPARE_TO_MASTER=true
 fi
 
