@@ -18,8 +18,8 @@ if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
   COMPARE_TO_MASTER=true
 fi
 
-# Exit if any command fails
-set -e
+# Print all commands and exit on error
+set -e -v
 
 # Build and run the PR
 echo "Running setup script..."

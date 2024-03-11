@@ -1,7 +1,7 @@
 #!/bin/env bash
 
-# Exit if any command fails
-set -e
+# Print all commands and exit on error
+set -e -v
 
 # Build and run the PR. Create validation plots
 echo "Running setup script..."
