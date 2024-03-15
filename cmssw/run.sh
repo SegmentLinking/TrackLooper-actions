@@ -91,7 +91,7 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   echo "Running setup script..."
   source setup.sh
   echo "Building and LST..."
-  make clean
+  make clean || echo "make clean failed"
   make code/rooutil/
   sdl_make_tracklooper -c || echo "Done"
   if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
