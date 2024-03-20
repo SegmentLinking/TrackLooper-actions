@@ -5,7 +5,7 @@ set -e -v
 
 # Temporarily merge the master branch
 git checkout -b pr_branch
-git fetch --unshallow # It might be worth switching actions/checkout to use depth 0 later on
+git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
 git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
 git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 
