@@ -3,6 +3,12 @@
 # Print all commands and exit on error
 set -e -v
 
+# Temporarily merge the master branch
+git checkout -b pr_branch
+git fetch --unshallow # It might be worth switching actions/checkout to use depth 0 later on
+git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
+git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+
 # Build and run the PR. Create validation plots
 echo "Running setup script..."
 source setup.sh
@@ -18,8 +24,8 @@ echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
 
 # Checkout the master branch so we can compare what has changed
+git stash
 PRSHA=$(git rev-parse HEAD)
-git fetch origin master
 git checkout origin/master
 
 # Build and run master. Create comparison plots
