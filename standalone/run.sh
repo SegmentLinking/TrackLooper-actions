@@ -13,12 +13,10 @@ git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merg
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
-make code/rooutil/
-sdl_make_tracklooper -c || echo "Done"
-if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
+sdl_make_tracklooper -mc || echo "Done"
+if [[ ! -f bin/sdl_cpu || ! -f bin/sdl_cuda ]]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
 echo "Running LST..."
-rm SDL/libsdl_cuda.so
-sdl -i PU200 -o LSTNtuple_after.root -s 4
+sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
@@ -32,12 +30,11 @@ git checkout origin/master
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
-make clean || echo "make clean failed"
-make code/rooutil/
-sdl_make_tracklooper -cC || echo "Done"
-if ! [ -f bin/sdl ]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
+# Only CPU version is compiled since the master branch has already been tested
+sdl_make_tracklooper -mcC || echo "Done"
+if [[ ! -f bin/sdl_cpu ]]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
 echo "Running LST..."
-sdl -i PU200 -o LSTNtuple_before.root -s 4
+sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
 # Go back to the PR commit so that the git tag is consistent everywhere
 git checkout $PRSHA
