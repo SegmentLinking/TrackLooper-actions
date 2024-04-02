@@ -45,7 +45,7 @@ git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $CMSSW_DEFAULT_BRANCH
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge -m "Merge default branch" $CMSSW_DEFAULT_BRANCH || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge -m "Merge default branch" SegLink/$CMSSW_DEFAULT_BRANCH || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-addpkg RecoTracker/LST Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
 cat <<EOF >lst_headers.xml
 <tool name="lst_headers" version="1.0">
@@ -108,7 +108,7 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   # Recompile CMSSW in case anything changed in the headers
   scram b clean
   # Go back to the default branch
-  git checkout $CMSSW_DEFAULT_BRANCH
+  git checkout SegLink/$CMSSW_DEFAULT_BRANCH
   scram b -j 4
   echo "Running 21034.1 workflow..."
   cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
