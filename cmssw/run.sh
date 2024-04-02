@@ -1,5 +1,7 @@
 #!/bin/env bash
 
+CMSSW_DEFAULT_BRANCH=CMSSW_14_1_0_pre0_LST_X
+
 if [ -n "$CMSSW_BRANCH" ]; then
   # Remove \r and other control characters that could be in there (newline characters in github are \r\n)
   CMSSW_BRANCH=$(echo $CMSSW_BRANCH | tr -d '[:cntrl:]')
@@ -14,7 +16,7 @@ fi
 # When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
 COMPARE_TO_MASTER=false
 if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
-  CMSSW_BRANCH=CMSSW_14_1_0_pre0_LST_X
+  CMSSW_BRANCH=$CMSSW_DEFAULT_BRANCH
   COMPARE_TO_MASTER=true
 fi
 
@@ -41,6 +43,9 @@ git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink ${CMSSW_BRANCH}:SegLink_cmssw
 git checkout SegLink_cmssw
+git fetch SegLink $CMSSW_DEFAULT_BRANCH
+git config user.email "gha@example.com" && git config user.name "GHA"
+git merge -m "Merge default branch" $CMSSW_DEFAULT_BRANCH || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-addpkg RecoTracker/LST Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
 cat <<EOF >lst_headers.xml
 <tool name="lst_headers" version="1.0">
@@ -102,6 +107,8 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   eval `scramv1 runtime -sh`
   # Recompile CMSSW in case anything changed in the headers
   scram b clean
+  # Go back to the default branch
+  git checkout $CMSSW_DEFAULT_BRANCH
   scram b -j 4
   echo "Running 21034.1 workflow..."
   cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
