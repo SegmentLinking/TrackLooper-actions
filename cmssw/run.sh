@@ -33,8 +33,7 @@ git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merg
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
-sdl_make_tracklooper -mc || echo "Done"
-if [[ ! -f bin/sdl_cpu || ! -f bin/sdl_cuda ]]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
+sdl_make_tracklooper -mcAs
 echo "Setting up CMSSW..."
 scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
@@ -101,8 +100,7 @@ if [ "$COMPARE_TO_MASTER" == "true" ]; then
   echo "Running setup script..."
   source setup.sh
   echo "Building and LST..."
-  sdl_make_tracklooper -mcC || echo "Done"
-  if [[ ! -f bin/sdl_cpu ]]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
+  sdl_make_tracklooper -mcCs
   cd $CMSSW_VERSION/src
   eval `scramv1 runtime -sh`
   # Recompile CMSSW in case anything changed in the headers

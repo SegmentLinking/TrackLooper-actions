@@ -13,8 +13,7 @@ git merge --no-commit --no-ff origin/master || (echo "***\nError: There are merg
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
-sdl_make_tracklooper -mc || echo "Done"
-if [[ ! -f bin/sdl_cpu || ! -f bin/sdl_cuda ]]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
+sdl_make_tracklooper -mcAs
 echo "Running LST..."
 sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
@@ -31,8 +30,7 @@ echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
 # Only CPU version is compiled since the master branch has already been tested
-sdl_make_tracklooper -mcC || echo "Done"
-if [[ ! -f bin/sdl_cpu ]]; then echo "Build failed. Printing log..."; cat .make.log*; false; fi
+sdl_make_tracklooper -mcCs
 echo "Running LST..."
 sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
