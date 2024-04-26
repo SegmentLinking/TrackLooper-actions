@@ -16,7 +16,7 @@ outputs:
     value: ${{ steps.output-vars.outputs.archive-dir }}
   comment:
     description: "The comment that will be posted in the PR if the test passes."
-    value: ${{ steps.output-vars.outputs.comment }}
+    value: ${{ steps.output-comment.outputs.comment }}
 runs:
   using: 'composite'
   steps:
@@ -29,9 +29,16 @@ runs:
     - name: List files in cvmfs to get it started
       run: ls /cvmfs/cms.cern.ch/ > /dev/null
       shell: bash
-    - name: Set up environment variables
+    - name: Set output variables
+      id: output-vars
       shell: bash
       run: |
+        ARCHIVE_REPO=SegmentLinking/TrackLooper-plots-archive
+        echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
+        ARCHIVE_BRANCH=main
+        echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_standalone
+        echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
     - name: Build and run in Docker container
@@ -46,16 +53,10 @@ runs:
           -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
         run: ./run.sh
-    - name: Set output variables
-      id: output-vars
+    - name: Set output comment
+      id: output-comment
       shell: bash
       run: |
-        ARCHIVE_REPO=SegmentLinking/TrackLooper-plots-archive
-        echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
-        ARCHIVE_BRANCH=main
-        echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_standalone
-        echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
         The PR was built and ran successfully in standalone mode. Here are some of the comparison plots.
 
