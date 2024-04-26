@@ -57,6 +57,9 @@ runs:
       id: output-comment
       shell: bash
       run: |
+        ARCHIVE_REPO=${{ steps.output-vars.outputs.archive-repo }}
+        ARCHIVE_BRANCH=${{ steps.output-vars.outputs.archive-branch }}
+        ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
         COMMENT=$(cat <<EOF
         The PR was built and ran successfully in standalone mode. Here are some of the comparison plots.
 
@@ -78,11 +81,10 @@ runs:
         The full set of validation and comparison plots can be found [here](https://github.com/$ARCHIVE_REPO/tree/$ARCHIVE_BRANCH/$ARCHIVE_DIR).
 
         Here is a timing comparison:
-        ```
-           Evt    Hits       MD       LS      T3       T5       pLS       pT5      pT3      TC       Reset    Event     Short             Rate
+        <pre><code>   Evt    Hits       MD       LS      T3       T5       pLS       pT5      pT3      TC       Reset    Event     Short             Rate
         $(grep -h "avg " timing_master.txt) (master)
         $(grep -h "avg " timing_PR.txt) (this PR)
-        ```
+        </code></pre>
         EOF
         )
         {
