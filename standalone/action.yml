@@ -23,6 +23,28 @@ runs:
     - name: Copy script to workspace
       run: cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
       shell: bash
+    - name: Mount cvmfs
+      uses: cvmfs-contrib/github-action-cvmfs@v4
+      # For some reason we need to interact with cmssw before using it in Docker because otherwise it fails
+    - name: List files in cvmfs to get it started
+      run: ls /cvmfs/cms.cern.ch/ > /dev/null
+      shell: bash
+    - name: Set up environment variables
+      run: |
+        echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
+        echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
+    - name: Build and run in Docker container
+      uses: addnab/docker-run-action@v3
+      with:
+        image: ariostas/el8:standalone
+        shell: bash
+        options: >
+          -v ${{ github.workspace }}:/home/TrackLooper
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch
+          -w /home/TrackLooper
+          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
+        run: ./run.sh
     - name: Set output variables
       id: output-vars
       shell: bash
@@ -52,6 +74,13 @@ runs:
         </table>
 
         The full set of validation and comparison plots can be found [here](https://github.com/$ARCHIVE_REPO/tree/$ARCHIVE_BRANCH/$ARCHIVE_DIR).
+
+        Here is a timing comparison:
+        ```
+           Evt    Hits       MD       LS      T3       T5       pLS       pT5      pT3      TC       Reset    Event     Short             Rate
+        $(grep -h "avg " timing_master.txt) (master)
+        $(grep -h "avg " timing_PR.txt) (this PR)
+        ```
         EOF
         )
         {
@@ -59,23 +88,3 @@ runs:
           echo "$COMMENT"
           echo EOF
         } >> $GITHUB_OUTPUT
-        echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
-        echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
-    - name: Mount cvmfs
-      uses: cvmfs-contrib/github-action-cvmfs@v4
-      # For some reason we need to interact with cmssw before using it in Docker because otherwise it fails
-    - name: List files in cvmfs to get it started
-      run: ls /cvmfs/cms.cern.ch/ > /dev/null
-      shell: bash
-    - name: Build and run in Docker container
-      uses: addnab/docker-run-action@v3
-      with:
-        image: ariostas/el8:standalone
-        shell: bash
-        options: >
-          -v ${{ github.workspace }}:/home/TrackLooper
-          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch
-          -w /home/TrackLooper
-          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
-          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
-        run: ./run.sh

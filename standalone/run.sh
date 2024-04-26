@@ -15,7 +15,7 @@ source setup.sh
 echo "Building and LST..."
 sdl_make_tracklooper -mcAs
 echo "Running LST..."
-sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4
+sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 | tee -a timing_PR.txt
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
@@ -32,7 +32,7 @@ echo "Building and LST..."
 # Only CPU version is compiled since the master branch has already been tested
 sdl_make_tracklooper -mcCs
 echo "Running LST..."
-sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4
+sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 | tee -a timing_master.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
 # Go back to the PR commit so that the git tag is consistent everywhere
 git checkout $PRSHA
