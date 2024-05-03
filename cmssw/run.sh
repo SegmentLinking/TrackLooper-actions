@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-CMSSW_DEFAULT_BRANCH=CMSSW_14_1_0_pre0_LST_X
+CMSSW_DEFAULT_BRANCH=CMSSW_14_1_0_pre3_LST_X
 
 if [ -n "$CMSSW_BRANCH" ]; then
   # Remove \r and other control characters that could be in there (newline characters in github are \r\n)
