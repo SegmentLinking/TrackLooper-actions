@@ -12,12 +12,9 @@ if [ -n "$CMSSW_BRANCH" ]; then
   # Validate the cmssw branch name to avoid code injection
   CMSSW_BRANCH=$(git check-ref-format --branch $CMSSW_BRANCH || echo "default")
 fi
-# Set the CMSSW branch to use
-# When using a non-default branch comparison plots are not made because the changes in both repos presumably depend on each other
-COMPARE_TO_MASTER=false
+# Set the CMSSW branch to the default one if not specified
 if [ -z "$CMSSW_BRANCH" ] || [ "$CMSSW_BRANCH" == "default" ]; then
   CMSSW_BRANCH=$CMSSW_DEFAULT_BRANCH
-  COMPARE_TO_MASTER=true
 fi
 
 # Print all commands and exit on error
@@ -89,42 +86,36 @@ cmsRun step4_HARVESTING.py
 mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root This_PR.root
 rm step3_*.root
 
-if [ "$COMPARE_TO_MASTER" == "true" ]; then
-  # Checkout the master branch so we can compare what has changed
-  cd ../..
-  git stash
-  PRSHA=$(git rev-parse HEAD)
-  git checkout origin/master
+# Checkout the master branch so we can compare what has changed
+cd ../..
+git stash
+PRSHA=$(git rev-parse HEAD)
+git checkout origin/master
 
-  # Build and run master
-  echo "Running setup script..."
-  source setup.sh
-  echo "Building and LST..."
-  sdl_make_tracklooper -mcCs
-  cd $CMSSW_VERSION/src
-  eval `scramv1 runtime -sh`
-  # Recompile CMSSW in case anything changed in the headers
-  scram b clean
-  # Go back to the default branch
-  git checkout SegLink/$CMSSW_DEFAULT_BRANCH
-  scram b -j 4
-  echo "Running 21034.1 workflow..."
-  cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
-  cmsRun step4_HARVESTING.py
-  mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root master.root
-  # Go back to the PR commit so that the git tag is consistent everywhere
-  cd ../..
-  git checkout $PRSHA
-  cd $CMSSW_VERSION/src
+# Build and run master
+echo "Running setup script..."
+source setup.sh
+echo "Building and LST..."
+sdl_make_tracklooper -mcCs
+cd $CMSSW_VERSION/src
+eval `scramv1 runtime -sh`
+# Recompile CMSSW in case anything changed in the headers
+scram b clean
+# Go back to the default branch
+git checkout SegLink/$CMSSW_DEFAULT_BRANCH
+scram b -j 4
+echo "Running 21034.1 workflow..."
+cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+cmsRun step4_HARVESTING.py
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root master.root
+# Go back to the PR commit so that the git tag is consistent everywhere
+cd ../..
+git checkout $PRSHA
+cd $CMSSW_VERSION/src
 
-  # Create comparison plots
-  makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
-  makeTrackValidationPlots.py --extended --png -o plots_png master.root This_PR.root
-else
-  # Create validation plots
-  makeTrackValidationPlots.py --extended -o plots_pdf This_PR.root
-  makeTrackValidationPlots.py --extended --png -o plots_png This_PR.root
-fi
+# Create comparison plots
+makeTrackValidationPlots.py --extended -o plots_pdf master.root This_PR.root
+makeTrackValidationPlots.py --extended --png -o plots_png master.root This_PR.root
 
 # Copy a few plots that will be attached in the PR comment
 mkdir $TRACKLOOPERDIR/$ARCHIVE_DIR
