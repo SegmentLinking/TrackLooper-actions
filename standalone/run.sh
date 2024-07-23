@@ -11,7 +11,7 @@ git merge --no-commit --no-ff origin/${TARGET_BRANCH} || (echo "***\nError: Ther
 
 # Download data files
 cd RecoTracker/LSTCore
-git clone --branch initial https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
+git clone --branch add_t33_maps https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
 
 # Build and run the PR. Create validation plots
 cd standalone
