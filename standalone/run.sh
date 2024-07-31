@@ -21,7 +21,8 @@ echo "Building and LST..."
 sdl_make_tracklooper -mcAs || lst_make_tracklooper -mcAs
 LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
 echo "Running LST..."
-(sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_PR.txt) || (lst_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_PR.txt)
+(which sdl_cpu && (sdl_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_PR.txt)) || echo "sdl_cpu not found"
+(which lst_cpu && (lst_cpu -i PU200 -o LSTNtuple_after.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_PR.txt)) || echo "lst_cpu not found"
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
@@ -38,7 +39,8 @@ echo "Building and LST..."
 # Only CPU version is compiled since the target branch has already been tested
 sdl_make_tracklooper -mcCs || lst_make_tracklooper -mcCs
 echo "Running LST..."
-(sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_target.txt) || (lst_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_target.txt)
+(which sdl_cpu && (sdl_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_target.txt)) || echo "sdl_cpu not found"
+(which lst_cpu && (lst_cpu -i PU200 -o LSTNtuple_before.root -s 4 -v 1 $LOW_PT_FLAG | tee -a /home/TrackLooper/timing_target.txt)) || echo "lst_cpu not found"
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
 # Go back to the PR commit so that the git tag is consistent everywhere
 git checkout $PRSHA
