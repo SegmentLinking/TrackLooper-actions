@@ -45,7 +45,7 @@ cmsDriver.py step3 \
   --nThreads 4 \
   --filein file:/data2/segmentlinking/step2_24834.703_100Events.root \
   --fileout file:step3_out.root \
-  -no_exec
+  --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
   sed -i "30i process.load('RecoTracker.LST.lstModulesDevESProducer_cfi')\nprocess.load('RecoTracker.LST.lstProducer_cfi')\nprocess.lstModulesDevESProducer.ptCutLabel = '0.6'\nprocess.lstProducer.ptCutLabel = '0.6'\nprocess.lstProducer.ptCut = 0.6" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 fi
