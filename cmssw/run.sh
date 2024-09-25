@@ -43,7 +43,7 @@ cmsDriver.py step3 \
   --procModifiers trackingIters01,trackingLST \
   --accelerators cpu \
   --nThreads 4 \
-  --filein file:/data2/segmentlinking/step2_24834.703_100Events.root \
+  --filein file:/data2/segmentlinking/step2_29834.1_100Events.root \
   --fileout file:step3_out.root \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
