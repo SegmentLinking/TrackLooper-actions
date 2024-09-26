@@ -34,11 +34,11 @@ git clone --branch add_t33_maps https://github.com/SegmentLinking/RecoTracker-LS
 echo "Starting LST test..."
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
-  --conditions auto:phase2_realistic_T25 \
+  --conditions auto:phase2_realistic_T33 \
   --datatier GEN-SIM-RECO,DQMIO \
   -n 75 \
   --eventcontent RECOSIM,DQM \
-  --geometry Extended2026D98 \
+  --geometry Extended2026D110 \
   --era Phase2C17I13M9 \
   --procModifiers trackingIters01,trackingLST \
   --accelerators cpu \
@@ -53,13 +53,13 @@ echo "Setting up siteconf..."
 git clone https://github.com/cms-sw/siteconf.git
 sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.gov:3128"\/>/d' siteconf/local/JobConfig/site-local-config.xml
 export SITECONFIG_PATH=$PWD/siteconf/local
-echo "Running 24834.703 workflow..."
+echo "Running 29834.1 (+LST) workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsDriver.py step4 \
   -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM \
-  --conditions auto:phase2_realistic_T25 \
+  --conditions auto:phase2_realistic_T33 \
   --mc \
-  --geometry Extended2026D98 \
+  --geometry Extended2026D110 \
   --scenario pp \
   --filetype DQM \
   --era Phase2C17I13M9 \
@@ -81,7 +81,7 @@ eval `scramv1 runtime -sh`
 # Recompile CMSSW in case anything changed in the headers
 scram b clean
 scram b -j 4
-echo "Running 24834.703 workflow..."
+echo "Running 29834.1 (+LST) workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsRun step4_HARVESTING.py
 mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root target_branch.root
