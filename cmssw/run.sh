@@ -36,14 +36,14 @@ cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
   --conditions auto:phase2_realistic_T33 \
   --datatier GEN-SIM-RECO,DQMIO \
-  -n 75 \
+  -n 100 \
   --eventcontent RECOSIM,DQM \
   --geometry Extended2026D110 \
   --era Phase2C17I13M9 \
   --procModifiers trackingIters01,trackingLST \
   --accelerators cpu \
   --nThreads 4 \
-  --filein file:/data2/segmentlinking/step2_29834.1_75Events.root \
+  --filein file:/data2/segmentlinking/step2_29834.1_100Events.root \
   --fileout file:step3_out.root \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
@@ -63,7 +63,7 @@ cmsDriver.py step4 \
   --scenario pp \
   --filetype DQM \
   --era Phase2C17I13M9 \
-  -n 75 \
+  -n 100 \
   --filein file:step3_out_inDQM.root \
   --fileout file:step4_out.root \
   --no_exec
