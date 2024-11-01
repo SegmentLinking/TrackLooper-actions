@@ -26,5 +26,7 @@ echo "Checking format"
 scram b code-format
 git diff --exit-code || (echo "***\nError: There are unformatted files. Please run 'scram b code-format'.\n***" && false)
 echo "Running checks"
-scram b code-checks
+scram b -j 4 code-checks
 git diff --exit-code || (echo "***\nError: There are suggested changes. Please run 'scram b code-checks'.\n***" && false)
+echo "Checking headers"
+scram b -j 4 check-headers
