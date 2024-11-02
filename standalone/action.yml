@@ -69,6 +69,7 @@ runs:
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
           -e LOW_PT=${{ inputs.low-pt }}
+          -e MAX_MAKE_THREADS=4
         run: ./run.sh
     - name: Set output comment
       id: output-comment
