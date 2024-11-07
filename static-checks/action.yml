@@ -18,9 +18,13 @@ runs:
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
     - name: Mount cvmfs
       uses: cvmfs-contrib/github-action-cvmfs@v4
-      # For some reason we need to interact with cmssw before using it in Docker because otherwise it fails
+      with:
+        cvmfs_repositories: "cms.cern.ch,cms-ib.cern.ch"
+    # For some reason we need to interact with cvmfs before using it in Docker because otherwise it fails
     - name: List files in cvmfs to get it started
-      run: ls /cvmfs/cms.cern.ch/ > /dev/null
+      run: |
+        ls /cvmfs/cms.cern.ch/ > /dev/null
+        ls /cvmfs/cms-ib.cern.ch/ > /dev/null
       shell: bash
     - name: Get PR target branch
       id: get_target_branch
