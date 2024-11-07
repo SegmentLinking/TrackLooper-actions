@@ -38,7 +38,7 @@ cmsDriver.py step3 \
   --datatier GEN-SIM-RECO,DQMIO \
   -n 100 \
   --eventcontent RECOSIM,DQM \
-  --geometry Extended2026D110 \
+  --geometry ExtendedRun4D110 \
   --era Phase2C17I13M9 \
   --procModifiers trackingIters01,trackingLST \
   --accelerators cpu \
@@ -59,7 +59,7 @@ cmsDriver.py step4 \
   -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM \
   --conditions auto:phase2_realistic_T33 \
   --mc \
-  --geometry Extended2026D110 \
+  --geometry ExtendedRun4D110 \
   --scenario pp \
   --filetype DQM \
   --era Phase2C17I13M9 \
