@@ -1,6 +1,6 @@
 #!/bin/env bash
 
-CMSSW_VERSION=CMSSW_14_2_X_2024-11-06-1100
+CMSSW_VERSION=CMSSW_14_2_X_2024-11-11-2300
 
 # Print all commands and exit on error
 set -e -v

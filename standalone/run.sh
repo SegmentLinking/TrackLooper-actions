@@ -16,6 +16,7 @@ git clone --branch add_t33_maps https://github.com/SegmentLinking/RecoTracker-LS
 # Build and run the PR. Create validation plots
 cd standalone
 echo "Running setup script..."
+sed -i 's/CMSSW_14_2_0_pre3/CMSSW_14_2_X_2024-11-11-2300/g' setup.sh # remove when we move to pre4 or later
 source setup.sh
 echo "Building and LST..."
 sdl_make_tracklooper -mcAs || lst_make_tracklooper -mcAs
@@ -34,6 +35,7 @@ git checkout origin/${TARGET_BRANCH}
 
 # Build and run target. Create comparison plots
 echo "Running setup script..."
+sed -i 's/CMSSW_14_2_0_pre3/CMSSW_14_2_X_2024-11-11-2300/g' setup.sh # remove when we move to pre4 or later
 source setup.sh
 echo "Building and LST..."
 # Only CPU version is compiled since the target branch has already been tested
