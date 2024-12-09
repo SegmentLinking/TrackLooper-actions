@@ -27,7 +27,7 @@ runs:
       run: cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
       shell: bash
     - name: Mount cvmfs
-      uses: cvmfs-contrib/github-action-cvmfs@v4
+      uses: cvmfs-contrib/github-action-cvmfs@v5
       with:
         cvmfs_repositories: "cms.cern.ch,cms-ib.cern.ch"
     # For some reason we need to interact with cvmfs before using it in Docker because otherwise it fails
