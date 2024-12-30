@@ -1,5 +1,7 @@
 #!/bin/env bash
 
+FORCED_CMSSW_VERSION=CMSSW_15_0_0_pre1
+
 # Print all commands and exit on error
 set -e -v
 
