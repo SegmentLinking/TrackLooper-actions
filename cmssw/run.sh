@@ -1,6 +1,7 @@
 #!/bin/env bash
 
-CMSSW_VERSION=CMSSW_15_0_0_pre1
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+CMSSW_VERSION=$(scram list CMSSW | grep -P " CMSSW_\d{2}_\d{1,2}_\d{1,2}(|_pre\d{1,2}) " | awk '{print $2}' | sort -r | head -n 1)
 
 # Print all commands and exit on error
 set -e -v
