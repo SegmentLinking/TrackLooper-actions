@@ -23,7 +23,7 @@ git fetch SegLink $TARGET_BRANCH
 git cms-addpkg RecoTracker/LST RecoTracker/LSTCore \
   Configuration/ProcessModifiers Configuration/PyReleaseValidation \
   RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking \
-  HeterogeneousCore/AlpakaInterface
+  HeterogeneousCore/AlpakaInterface HeterogeneousCore/AlpakaMath
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
 git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
