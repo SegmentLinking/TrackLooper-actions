@@ -12,18 +12,20 @@ source /cvmfs/cms.cern.ch/cmsset_default.sh
 scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
-# cms-init is too slow
-# git cms-init --upstream-only
-git init
+git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git sparse-checkout set .gitignore .clang-format .clangtidy
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $TARGET_BRANCH
-git cms-addpkg RecoTracker/LST RecoTracker/LSTCore \
-  Configuration/ProcessModifiers Configuration/PyReleaseValidation \
-  RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking \
-  HeterogeneousCore/AlpakaInterface HeterogeneousCore/AlpakaMath
+git cms-addpkg RecoTracker/LST RecoTracker/LSTCore
+git cms-addpkg Configuration/ProcessModifiers || echo "Package not found"
+git cms-addpkg Configuration/PyReleaseValidation || echo "Package not found"
+git cms-addpkg RecoTracker/ConversionSeedGenerators || echo "Package not found"
+git cms-addpkg RecoTracker/FinalTrackSelectors || echo "Package not found"
+git cms-addpkg RecoTracker/IterativeTracking || echo "Package not found"
+git cms-addpkg HeterogeneousCore/AlpakaInterface || echo "Package not found"
+git cms-addpkg HeterogeneousCore/AlpakaMath || echo "Package not found"
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
 git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
