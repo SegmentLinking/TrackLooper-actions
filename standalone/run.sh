@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P " CMSSW_\d{2}_\d{1,2}_\d{1,2}(|_pre\d{1,2}) " | awk '{print $2}' | sort -r | head -n 1)
+export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P " CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4} " | awk '{print $2}' | sort -r | head -n 1)
 
 # Print all commands and exit on error
 set -e -v
