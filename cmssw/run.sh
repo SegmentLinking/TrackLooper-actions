@@ -25,6 +25,8 @@ git cms-addpkg RecoTracker/FinalTrackSelectors || echo "Package not found"
 git cms-addpkg RecoTracker/IterativeTracking || echo "Package not found"
 git cms-addpkg HeterogeneousCore/AlpakaInterface || echo "Package not found"
 git cms-addpkg HeterogeneousCore/AlpakaMath || echo "Package not found"
+git cms-addpkg DQM/TrackingMonitorSource || echo "Package not found"
+git cms-addpkg HLTrigger/Configuration || echo "Package not found"
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
 git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
