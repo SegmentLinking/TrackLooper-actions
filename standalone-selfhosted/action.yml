@@ -1,0 +1,102 @@
+name: 'Test standalone'
+description: 'Builds and tests the standalone version of LST'
+inputs:
+  pr-number:
+    description: 'PR number'
+    required: true
+  low-pt:
+    description: 'Controls whether the low pT setup should be used'
+    required: true
+outputs:
+  archive-repo:
+    description: "The repository where the plots will be stored."
+    value: ${{ steps.output-vars.outputs.archive-repo }}
+  archive-branch:
+    description: "The branch of the repository where the plots will be stored."
+    value: ${{ steps.output-vars.outputs.archive-branch }}
+  archive-dir:
+    description: "The directory containing the data that will be stored in the archive repository."
+    value: ${{ steps.output-vars.outputs.archive-dir }}
+  comment:
+    description: "The comment that will be posted in the PR if the test passes."
+    value: ${{ steps.output-comment.outputs.comment }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Copy script to workspace
+      run: cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
+      shell: bash
+    - name: Set output variables
+      id: output-vars
+      shell: bash
+      run: |
+        ARCHIVE_REPO=${{ github.repository_owner }}/TrackLooper-plots-archive
+        echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
+        ARCHIVE_BRANCH=cmssw
+        echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_gpu
+        echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
+        echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
+        echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
+    - name: Get PR target branch
+      id: get_target_branch
+      uses: actions/github-script@v7
+      with:
+        result-encoding: string
+        script: |
+          const { data: pullRequest } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: "cmssw",
+            pull_number: "${{ inputs.pr-number }}",
+          });
+          return pullRequest.base.ref;
+    - name: Build and run
+      shell: bash
+      run: ./run.sh
+      env:
+        ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
+        TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
+        LOW_PT: ${{ inputs.low-pt }}
+        MAXMAKETHREADS: 4
+    - name: Set output comment
+      id: output-comment
+      shell: bash
+      run: |
+        LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
+        ARCHIVE_REPO=${{ steps.output-vars.outputs.archive-repo }}
+        ARCHIVE_BRANCH=${{ steps.output-vars.outputs.archive-branch }}
+        ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
+        COMMENT=$(cat <<EOF
+        The PR was built and ran successfully in standalone mode${LOW_PT} on GPU. Here are some of the comparison plots.
+
+        <table>
+          <tr>
+            <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/eff_pt_comp.png" alt="Efficiency vs pT comparison"></td>
+            <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/eff_eta_comp.png" alt="Efficiency vs eta comparison"></td>
+          </tr>
+          <tr>
+            <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/fake_pt_comp.png" alt="Fake rate vs pT comparison"></td>
+            <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/fake_eta_comp.png" alt="Fake rate vs eta comparison"></td>
+          </tr>
+          <tr>
+            <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/dup_pt_comp.png" alt="Duplicate rate vs pT comparison"></td>
+            <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/dup_eta_comp.png" alt="Duplicate rate vs eta comparison"></td>
+          </tr>
+        </table>
+
+        The full set of validation and comparison plots can be found [here](https://github.com/$ARCHIVE_REPO/tree/$ARCHIVE_BRANCH/$ARCHIVE_DIR).
+
+        Here is a timing comparison:
+        <pre><code>   Evt    Hits       MD       LS      T3       T5       pLS       pT5      pT3      TC       Reset    Event     Short             Rate
+        [target branch]
+        $(grep -h "avg " timing_target.txt | tail -n 5)
+        [this PR]
+        $(grep -h "avg " timing_PR.txt | tail -n 5)
+        </code></pre>
+        EOF
+        )
+        {
+          echo "comment<<EOF"
+          echo "$COMMENT"
+          echo EOF
+        } >> $GITHUB_OUTPUT

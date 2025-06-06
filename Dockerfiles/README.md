@@ -5,6 +5,7 @@ This directory contains the Dockerfiles needed to create the images that are use
 ```bash
 docker build -t <username>/el8:standalone -f Dockerfile-standalone .
 docker build -t <username>/el8:cmssw -f Dockerfile-cmssw .
+docker build -t <username>/el8:selfhosted -f Dockerfile-selfhosted .
 ```
 
 where `<username>` should be replaced with the appropriate DockerHub username. Then they should be uploaded to DockerHub using the following commands.
@@ -12,4 +13,5 @@ where `<username>` should be replaced with the appropriate DockerHub username. T
 ```bash
 docker push <username>/el8:standalone
 docker push <username>/el8:cmssw
+docker push <username>/el8:selfhosted
 ```

@@ -1,6 +1,6 @@
 # TrackLooper Standalone Testing Action
 
-The action in this directory tests the standalone version of [LST](https://github.com/SegmentLinking/TrackLooper). This action builds the code from a Pull Request (PR), runs over the PU200 sample, and generates validation plots. It then builds and run the code from the master branch, and produces comparison plots between the PR and the master branch. The `action.yml` file contains the needed configuration and setup, and the `run.sh` file contains the testing script.
+The action in this directory tests the standalone version of [LST](https://github.com/SegmentLinking/cmssw/tree/master/RecoTracker/LSTCore/standalone). This action builds the code from a Pull Request (PR), runs over the PU200 sample, and generates validation plots. It then builds and run the code from the master branch, and produces comparison plots between the PR and the master branch. The `action.yml` file contains the needed configuration and setup, and the `run.sh` file contains the testing script.
 
 ## Inputs
 

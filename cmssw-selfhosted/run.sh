@@ -33,7 +33,7 @@ git config user.email "gha@example.com" && git config user.name "GHA"
 git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
-scram b -j 4
+scram b -j 8
 echo "Starting LST test..."
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
@@ -44,9 +44,7 @@ cmsDriver.py step3 \
   --geometry ExtendedRun4D110 \
   --era Phase2C17I13M9 \
   --procModifiers trackingIters01,trackingLST \
-  --accelerators cpu \
-  --nThreads 4 \
-  --filein file:/data2/segmentlinking/step2_29834.1_100Events.root \
+  --filein file:/data2/segmentlinking/CMSSW_12_2_0_pre2/step2_29834.1_100Events.root \
   --fileout file:step3_out.root \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
@@ -83,7 +81,7 @@ git checkout SegLink/${TARGET_BRANCH}
 eval `scramv1 runtime -sh`
 # Recompile CMSSW in case anything changed in the headers
 scram b clean
-scram b -j 4
+scram b -j 8
 echo "Running 29834.1 (+LST) workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsRun step4_HARVESTING.py
@@ -96,12 +94,12 @@ makeTrackValidationPlots.py --extended -o plots_pdf target_branch.root this_PR.r
 makeTrackValidationPlots.py --extended --png -o plots_png target_branch.root this_PR.root
 
 # Copy a few plots that will be attached in the PR comment
-mkdir /home/TrackLooper/$ARCHIVE_DIR
-cp plots_png/plots_ootb/effandfakePtEtaPhi.png /home/TrackLooper/$ARCHIVE_DIR
+mkdir ../../$ARCHIVE_DIR
+cp plots_png/plots_ootb/effandfakePtEtaPhi.png ../../$ARCHIVE_DIR
 
 mkdir plots
 cp -r plots_pdf/plots_ootb plots
 cp -r plots_pdf/plots_highPurity plots
 cp -r plots_pdf/plots_building_highPtTripletStep plots
 rm -r plots/plots_ootb/*/ plots/plots_highPurity/*/ plots/plots_building_highPtTripletStep/*/
-tar zcf /home/TrackLooper/$ARCHIVE_DIR/plots.tar.gz plots
+tar zcf ../../$ARCHIVE_DIR/plots.tar.gz plots
