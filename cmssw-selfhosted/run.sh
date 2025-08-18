@@ -14,13 +14,14 @@ cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
-git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
-# Rebase target branch with master in case it is different
 git fetch SegLink
-git checkout $TARGET_BRANCH
-git rebase SegLink/master || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
+git fetch SegLink refs/pull/${PR_NUMBER}/head:PR_branch
+# Merge target branch into master in case they are different
+git checkout SegLink/master
+git switch -c master
+git merge SegLink/$TARGET_BRANCH || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 # Go back to PR branch
-git checkout SegLink_cmssw
+git checkout PR_branch
 git cms-addpkg RecoTracker/LST RecoTracker/LSTCore
 git cms-addpkg Configuration/ProcessModifiers || echo "Package not found"
 git cms-addpkg Configuration/PyReleaseValidation || echo "Package not found"
@@ -34,7 +35,7 @@ git cms-addpkg HLTrigger/Configuration || echo "Package not found"
 git cms-addpkg DataFormats/Common || echo "Package not found"
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge --no-commit --no-ff ${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge --no-commit --no-ff master || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-checkdeps -D
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
@@ -80,7 +81,7 @@ rm step3_*.root
 # Checkout the target branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
-git checkout ${TARGET_BRANCH}
+git checkout master
 git cms-checkdeps -D
 
 # Build and run target
