@@ -15,8 +15,12 @@ eval `scramv1 runtime -sh`
 git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
+# Rebase target branch with master in case it is different
+git fetch SegLink
+git checkout SegLink/$TARGET_BRANCH
+git rebase SegLink/master || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
+# Go back to PR branch
 git checkout SegLink_cmssw
-git fetch SegLink $TARGET_BRANCH
 git cms-addpkg RecoTracker/LST RecoTracker/LSTCore
 git cms-addpkg Configuration/ProcessModifiers || echo "Package not found"
 git cms-addpkg Configuration/PyReleaseValidation || echo "Package not found"
