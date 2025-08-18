@@ -17,7 +17,7 @@ git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 # Rebase target branch with master in case it is different
 git fetch SegLink
-git checkout SegLink/$TARGET_BRANCH
+git checkout $TARGET_BRANCH
 git rebase SegLink/master || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 # Go back to PR branch
 git checkout SegLink_cmssw
@@ -34,11 +34,11 @@ git cms-addpkg HLTrigger/Configuration || echo "Package not found"
 git cms-addpkg DataFormats/Common || echo "Package not found"
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge --no-commit --no-ff ${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-checkdeps -D
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
-scram b -j 16
+scram b -r -j 16
 echo "Starting LST test..."
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
@@ -80,14 +80,14 @@ rm step3_*.root
 # Checkout the target branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
-git checkout SegLink/${TARGET_BRANCH}
+git checkout ${TARGET_BRANCH}
 git cms-checkdeps -D
 
 # Build and run target
 eval `scramv1 runtime -sh`
 # Recompile CMSSW in case anything changed in the headers
-scram b clean
-scram b -j 16
+scram b distclean
+scram b -r -j 16
 echo "Running 29834.1 (+LST) workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsRun step4_HARVESTING.py
