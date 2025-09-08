@@ -50,7 +50,7 @@ runs:
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
     - name: Get PR target branch
       id: get_target_branch
-      uses: actions/github-script@v7
+      uses: actions/github-script@v8
       with:
         result-encoding: string
         script: |
