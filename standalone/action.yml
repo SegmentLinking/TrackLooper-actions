@@ -106,8 +106,8 @@ runs:
 
         Here is a timing comparison:
         <pre><code>   Evt    Hits       MD       LS      T3       T5       pLS       pT5      pT3      TC       Reset    Event     Short             Rate
-        $(grep -h "avg " timing_target.txt) (target branch)
-        $(grep -h "avg " timing_PR.txt) (this PR)
+        $(grep -ah "avg " timing_target.txt) (target branch)
+        $(grep -ah "avg " timing_PR.txt) (this PR)
         </code></pre>
         EOF
         )
