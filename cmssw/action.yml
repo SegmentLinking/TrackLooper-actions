@@ -31,9 +31,9 @@ runs:
       shell: bash
       run: |
         LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
-        ARCHIVE_REPO=${{ github.repository_owner }}/TrackLooper-plots-archive
+        ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
-        ARCHIVE_BRANCH=cmssw
+        ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
         ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_cmssw${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT

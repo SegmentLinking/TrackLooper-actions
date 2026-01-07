@@ -30,9 +30,9 @@ runs:
       id: output-vars
       shell: bash
       run: |
-        ARCHIVE_REPO=${{ github.repository_owner }}/TrackLooper-plots-archive
+        ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
-        ARCHIVE_BRANCH=cmssw
+        ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
         ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_gpu
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
