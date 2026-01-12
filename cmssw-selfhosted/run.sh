@@ -57,7 +57,9 @@ cmsDriver.py step3 \
   --fileout file:step3_out.root \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
-  sed -i "30i process.load('RecoTracker.LST.lstModulesDevESProducer_cfi')\nprocess.load('RecoTracker.LST.lstProducer_cfi')\nprocess.lstModulesDevESProducer.ptCutLabel = '0.6'\nprocess.lstProducer.ptCutLabel = '0.6'\nprocess.lstProducer.ptCut = 0.6" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+  lineno=$(grep -n '^# Input source$' step3_RAW2DIGI_RECO_VALIDATION_DQM.py | head -n1 | cut -d: -f1)
+  lineno=$((lineno - 1))
+  sed -i "${lineno}r ../../lowpt_mod.py" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 fi
 echo "Setting up siteconf..."
 git clone https://github.com/cms-sw/siteconf.git

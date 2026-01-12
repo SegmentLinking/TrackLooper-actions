@@ -24,7 +24,9 @@ runs:
   using: 'composite'
   steps:
     - name: Copy script to workspace
-      run: cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
+      run: |
+        cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
+        cp ${{ github.action_path }}/lowpt_mod.py ${{ github.workspace }}
       shell: bash
     - name: Set output variables
       id: output-vars
