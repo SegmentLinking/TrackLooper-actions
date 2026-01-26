@@ -60,7 +60,7 @@ jobs:
           done
       - name: Run static checks with SCRAM
         timeout-minutes: 100
-        uses: ../checks@use_reusable_workflows
+        uses: SegmentLinking/TrackLooper-actions/checks@use_reusable_workflows
         with:
           pr-number: ${{ inputs.pr-number }}
       - name: Create App Token
