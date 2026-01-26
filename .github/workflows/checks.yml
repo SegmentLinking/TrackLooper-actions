@@ -6,16 +6,7 @@ on:
       pr-number:
         description: PR number
         required: true
-        type: number
-      required-prs:
-        description: Comma-separated list of required PR numbers that must be merged before checks are run
-        required: false
         type: string
-    secrets:
-      app-id:
-        required: true
-      app-private-key:
-        required: true
 
 
 jobs:
@@ -24,4 +15,3 @@ jobs:
     steps:
       - name: Test
         run: echo "Test"
-        
