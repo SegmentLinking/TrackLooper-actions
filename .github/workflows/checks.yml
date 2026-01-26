@@ -28,7 +28,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: SegmentLinking/cmssw
-          ref: refs/pull/${{ inputs.number }}/head
+          ref: refs/pull/${{ inputs.pr-number }}/head
       - name: Get commit SHA
         run: |
           sha=$(git rev-parse HEAD)
