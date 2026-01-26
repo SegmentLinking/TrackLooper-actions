@@ -53,10 +53,12 @@ jobs:
       - name: Merge required PRs
         if: ${{ inputs.required-prs != '' }}
         run: |
-          IFS=',' read -ra PRS <<< "${{ inputs.required-prs }}"
+          CLEAN_LIST=$(echo "${{ inputs.required-prs }}" | tr -d '[:space:]')
+          IFS=',' read -ra PRS <<< "$CLEAN_LIST"
           for pr in "${PRS[@]}"; do
             echo "Merging required PR #$pr"
-            git merge refs/pull/${pr}/head
+            git fetch origin refs/pull/${pr}/head:pr-${pr}
+            git merge pr-${pr}
           done
       - name: Run static checks with SCRAM
         timeout-minutes: 100
