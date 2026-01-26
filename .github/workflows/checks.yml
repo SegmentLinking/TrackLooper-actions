@@ -6,7 +6,8 @@ on:
       pr-number:
         description: PR number
         required: true
-        type: number
+        # For some reason it doesn't work if we use `number` here
+        type: string
       required-prs:
         description: Comma-separated list of required PR numbers that must be merged before checks are run
         required: false
