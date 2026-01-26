@@ -12,6 +12,11 @@ on:
         description: Comma-separated list of required PR numbers that must be merged before checks are run
         required: false
         type: string
+    secrets:
+      app-id:
+        required: true
+      app-private-key:
+        required: true
 
 
 jobs:
