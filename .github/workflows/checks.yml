@@ -58,7 +58,7 @@ jobs:
           for pr in "${PRS[@]}"; do
             echo "Merging required PR #$pr"
             git fetch origin refs/pull/${pr}/head:pr-${pr}
-            git merge pr-${pr}
+            git merge pr-${pr} --allow-unrelated-histories -m "Merge PR${pr}"
           done
       - name: Run static checks with SCRAM
         timeout-minutes: 100
