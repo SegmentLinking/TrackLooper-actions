@@ -4,15 +4,31 @@ updates:
     directory: "/.github/workflows"
     schedule:
       interval: "weekly"
+    groups:
+          actions:
+            patterns:
+              - '*'
   - package-ecosystem: "github-actions"
     directory: "/standalone"
     schedule:
       interval: "weekly"
+    groups:
+          actions:
+            patterns:
+              - '*'
   - package-ecosystem: "github-actions"
     directory: "/cmssw"
     schedule:
       interval: "weekly"
+    groups:
+          actions:
+            patterns:
+              - '*'
   - package-ecosystem: "github-actions"
     directory: "/checks"
     schedule:
       interval: "weekly"
+    groups:
+          actions:
+            patterns:
+              - '*'
