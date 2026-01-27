@@ -1,32 +1,39 @@
-name: 'Test standalone'
-description: 'Builds and tests the standalone version of LST'
+name: Standalone Testing
+description: Builds and tests the standalone version of LST
 inputs:
   pr-number:
-    description: 'PR number'
+    description: PR number
     required: true
+  required-prs:
+    description: Comma-separated list of required PR numbers that must be merged before checks are run
+    required: false
+  runs-on:
+    description: Runner where to run the workflow
+    required: false
   low-pt:
-    description: 'Controls whether the low pT setup should be used'
-    required: true
+    description: Run the low pT setup
+    required: false
 outputs:
   archive-repo:
-    description: "The repository where the plots will be stored."
+    description: The repository where the plots will be stored
     value: ${{ steps.output-vars.outputs.archive-repo }}
   archive-branch:
-    description: "The branch of the repository where the plots will be stored."
+    description: The branch of the repository where the plots will be stored
     value: ${{ steps.output-vars.outputs.archive-branch }}
   archive-dir:
-    description: "The directory containing the data that will be stored in the archive repository."
+    description: The directory containing the data that will be stored in the archive repository
     value: ${{ steps.output-vars.outputs.archive-dir }}
   comment:
-    description: "The comment that will be posted in the PR if the test passes."
+    description: The comment that will be posted in the PR if the test passes
     value: ${{ steps.output-comment.outputs.comment }}
 runs:
-  using: 'composite'
+  using: composite
   steps:
     - name: Copy script to workspace
       run: cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
       shell: bash
     - name: Mount cvmfs
+      if: inputs.runs-on != 'self-hosted'
       uses: cvmfs-contrib/github-action-cvmfs@v5
       with:
         cvmfs_repositories: "cms.cern.ch,cms-ib.cern.ch"
@@ -61,6 +68,7 @@ runs:
           });
           return pullRequest.base.ref;
     - name: Build and run in Docker container
+      if: inputs.runs-on != 'self-hosted'
       uses: addnab/docker-run-action@v3
       with:
         image: ariostas/el8:standalone
@@ -75,7 +83,19 @@ runs:
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
           -e LOW_PT=${{ inputs.low-pt }}
           -e MAXMAKETHREADS=4
+          -e RUNS_ON=${{ inputs.runs-on }}
+          -e REQUIRED_PRS=${{ inputs.required-prs }}
         run: ./run.sh
+    - name: Build and run
+      shell: bash
+      run: ./run.sh
+      env:
+        ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
+        TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
+        LOW_PT: ${{ inputs.low-pt }}
+        MAXMAKETHREADS: 8
+        REQUIRED_PRS: ${{ inputs.required-prs }}
+        RUNS_ON: ${{ inputs.runs-on }}
     - name: Set output comment
       id: output-comment
       shell: bash

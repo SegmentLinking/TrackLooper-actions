@@ -24,7 +24,7 @@ jobs:
     name: Run checks for PR${{ inputs.pr-number }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout PR
+      - name: Check out PR
         uses: actions/checkout@v4
         with:
           repository: SegmentLinking/cmssw

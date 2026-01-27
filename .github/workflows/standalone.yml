@@ -1,0 +1,126 @@
+name: Standalone Testing
+
+on:
+  workflow_call:
+    # Seems like inputs other than `string` don't work well here
+    inputs:
+      pr-number:
+        description: PR number
+        required: true
+        type: string
+      required-prs:
+        description: Comma-separated list of required PR numbers that must be merged before checks are run
+        required: false
+        type: string
+      runs-on:
+        description: Runner where to run the workflow
+        required: true
+        type: string
+      lowpt:
+        description: Run the low pT setup
+        required: false
+        type: string
+    secrets:
+      app-id:
+        required: true
+      app-private-key:
+        required: true
+      deploy-private-key:
+        required: true
+
+
+jobs:
+  checks:
+    name: Run standalone tests for PR${{ inputs.pr-number }}
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ inputs.pr-number }}/head
+          sparse-checkout: |
+            RecoTracker/LST
+            RecoTracker/LSTCore
+            Configuration/ProcessModifiers
+            RecoTracker/ConversionSeedGenerators
+            RecoTracker/FinalTrackSelectors
+            RecoTracker/IterativeTracking
+            HeterogeneousCore/AlpakaInterface
+            HeterogeneousCore/AlpakaMath
+            DataFormats/Portable
+      - name: Get commit SHA
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "COMMIT_SHA=$sha" >> $GITHUB_ENV
+      - name: Create App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+          skip-token-revoke: true
+      - name: Create in progress check
+        uses: LouisBrunner/checks-action@v2.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          sha: ${{ env.COMMIT_SHA }}
+          name: Run Standalone PU200${{ inputs.lowpt == 'true' && ' (low pT setup)' || '' }}
+          status: in_progress
+          details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "This check has started...", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
+      - name: Build and run PR
+        timeout-minutes: 60
+        id: build-and-run
+        uses: SegmentLinking/TrackLooper-actions/standalone@use_reusable_workflows
+        with:
+          pr-number: ${{ inputs.pr-number }}
+          runs-on: ${{ inputs.runs-on }}
+          low-pt: ${{ inputs.lowpt }}
+      # - name: Upload plots to archival repo
+      #   uses: s0/git-publish-subdir-action@develop
+      #   env:
+      #     REPO: git@github.com:${{ steps.build-and-run.outputs.archive-repo }}.git
+      #     BRANCH: ${{ steps.build-and-run.outputs.archive-branch }}
+      #     FOLDER: ${{ steps.build-and-run.outputs.archive-dir }}
+      #     SSH_PRIVATE_KEY: ${{ secrets.deploy-private-key }}
+      #     TARGET_DIR: ${{ steps.build-and-run.outputs.archive-dir }}
+      - name: Comment on PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${{ steps.build-and-run.outputs.comment }}`
+            })
+      - name: Comment on PR if job failed.
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `There was a problem while building and running in standalone mode. The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
+            })
+      - name: Create App Token
+        if: always()
+        uses: actions/create-github-app-token@v1
+        id: app-token-end
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+      - name: Create completed check
+        uses: LouisBrunner/checks-action@v2.0.0
+        if: always()
+        with:
+          token: ${{ steps.app-token-end.outputs.token }}
+          sha: ${{ env.COMMIT_SHA }}
+          name: Run Standalone PU200${{ inputs.lowpt == 'true' && ' (low pT setup)' || '' }}
+          conclusion: ${{ job.status }}
+          details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "Status: ${{ job.status }}", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
