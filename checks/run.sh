@@ -30,7 +30,7 @@ CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
 IFS=',' read -ra PRS <<< "$CLEAN_LIST"
 for pr in "${PRS[@]}"; do
   echo "Merging required PR${pr}"
-  git fetch origin refs/pull/${pr}/head:pr-${pr}
+  git fetch SegLink refs/pull/${pr}/head:pr-${pr}
   git merge pr-${pr} --allow-unrelated-histories -m "Merge PR${pr}"
 done
 
