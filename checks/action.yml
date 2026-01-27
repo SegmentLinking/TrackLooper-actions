@@ -53,5 +53,5 @@ runs:
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
           -e PR_NUMBER=${{ inputs.pr-number }}
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
-          -e REQUIRED_PRS="${{ inputs.required-prs }}"
+          -e REQUIRED_PRS=${{ inputs.required-prs }}
         run: ./run.sh
