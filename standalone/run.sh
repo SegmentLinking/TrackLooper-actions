@@ -13,7 +13,9 @@ set -e -v
 git checkout -b pr_branch
 git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
 git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
-git merge --no-commit --no-ff origin/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+if [[ ! -z "$TARGET_BRANCH" ]]; then
+  git merge --no-commit --no-ff origin/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+fi
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
 IFS=',' read -ra PRS <<< "$CLEAN_LIST"
@@ -41,6 +43,10 @@ $LST_BIN -i PU200 -o LSTNtuple_after.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee 
 if [[ $RUNS_ON == "self-hosted" ]]; then
   echo "Running timing test"
   lst_timing PU200 | tee -a ../../../timing_PR.txt
+fi
+# Exit early if we're just testing master
+if [[ -z "$TARGET_BRANCH" ]]; then
+  exit 0
 fi
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
