@@ -87,6 +87,7 @@ runs:
           -e REQUIRED_PRS=${{ inputs.required-prs }}
         run: ./run.sh
     - name: Build and run
+      if: inputs.runs-on == 'self-hosted'
       shell: bash
       run: ./run.sh
       env:
