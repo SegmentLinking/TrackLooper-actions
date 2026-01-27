@@ -31,7 +31,7 @@ on:
 
 jobs:
   checks:
-    name: Run standalone tests for PR${{ inputs.pr-number }}
+    name: Run standalone tests for ${{ inputs.pr-number != '0' && format('PR{0}', inputs.pr-number) || 'master' }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Check out PR
