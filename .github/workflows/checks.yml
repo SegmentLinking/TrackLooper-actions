@@ -1,4 +1,4 @@
-name: Runs SCRAM static checks
+name: SCRAM Checks
 
 on:
   workflow_call:
@@ -50,21 +50,12 @@ jobs:
           details_url: ${{ github.server_url }}/SegmentLinking/cmssw/actions/runs/${{ github.run_id }}
           output: |
             {"title": "This check has started...", "summary": "The logs can be found [here](${{ github.server_url }}/SegmentLinking/cmssw/actions/runs/${{ github.run_id }})."}
-      - name: Merge required PRs
-        if: ${{ inputs.required-prs != '' }}
-        run: |
-          CLEAN_LIST=$(echo "${{ inputs.required-prs }}" | tr -d '[:space:]')
-          IFS=',' read -ra PRS <<< "$CLEAN_LIST"
-          for pr in "${PRS[@]}"; do
-            echo "Merging required PR #$pr"
-            git fetch origin refs/pull/${pr}/head:pr-${pr}
-            git merge pr-${pr} --allow-unrelated-histories -m "Merge PR${pr}"
-          done
       - name: Run static checks with SCRAM
         timeout-minutes: 100
         uses: SegmentLinking/TrackLooper-actions/checks@use_reusable_workflows
         with:
           pr-number: ${{ inputs.pr-number }}
+          required-prs: "${{ inputs.required-prs }}"
       - name: Create App Token
         if: always()
         uses: actions/create-github-app-token@v1

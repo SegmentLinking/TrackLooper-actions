@@ -25,6 +25,16 @@ git cms-addpkg RecoTracker/LST RecoTracker/LSTCore Configuration/ProcessModifier
 git config user.email "gha@example.com" && git config user.name "GHA"
 git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git commit -m "Temporary merge" || echo "Nothing to commit"
+# Merge required PRs
+CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
+IFS=',' read -ra PRS <<< "$CLEAN_LIST"
+for pr in "${PRS[@]}"; do
+  echo "Merging required PR${pr}"
+  git fetch origin refs/pull/${pr}/head:pr-${pr}
+  git merge pr-${pr} --allow-unrelated-histories -m "Merge PR${pr}"
+done
+
+# Run checks
 eval `scramv1 runtime -sh`
 echo "Checking format"
 scram b code-format
