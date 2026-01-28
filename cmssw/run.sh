@@ -69,7 +69,7 @@ cmsDriver.py step3 \
   --geometry ExtendedRun4D110 \
   --era Phase2C17I13M9 \
   --procModifiers trackingIters01,trackingLST \
-  $([[ $RUNS_ON == "self-hosted" ]] && "" || "--accelerators cpu") \
+  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
   --nThreads $N_STREAMS \
   --filein file:/data2/segmentlinking/step2_29834.1_100Events.root \
   --fileout file:step3_out.root \
