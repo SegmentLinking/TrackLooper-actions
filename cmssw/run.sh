@@ -62,7 +62,7 @@ echo "Starting LST test..."
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
-  --conditions auto:phase2_realistic_T33 \
+  --conditions auto:phase2_realistic_T35 \
   --datatier GEN-SIM-RECO,DQMIO \
   -n 100 \
   --eventcontent RECOSIM,DQM \
