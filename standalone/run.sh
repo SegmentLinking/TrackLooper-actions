@@ -9,12 +9,18 @@ export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1
 # Print all commands and exit on error
 set -e -v
 
-# Temporarily merge the target branch
+# Set up github config to avoid issues
+git config user.email "gha@example.com" && git config user.name "GHA"
+
+# Save current branch
 git checkout -b pr_branch
 git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
-git config user.email "gha@example.com" && git config user.name "GHA" # For some reason this is needed even though nothing is being committed
-if [[ ! -z "$TARGET_BRANCH" ]]; then
-  git merge --no-commit --no-ff origin/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+
+# Merge target branch into master in case they are different
+git checkout origin/master
+git switch -c master
+if [[ -n "$TARGET_BRANCH" ]]; then
+  git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
@@ -24,6 +30,12 @@ for pr in "${PRS[@]}"; do
   git fetch SegLink refs/pull/${pr}/head:pr-${pr}
   git merge pr-${pr} --allow-unrelated-histories -m "Merge PR${pr}"
 done
+
+# Go back to PR branch and merge target
+git checkout pr_branch
+if [[ -n "$TARGET_BRANCH" ]]; then
+  git merge master --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
+fi
 
 # Download data files
 cd RecoTracker/LSTCore
