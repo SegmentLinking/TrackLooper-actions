@@ -46,7 +46,7 @@ scram b -r -j 4
 echo "Starting LST test..."
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
-  --conditions auto:phase2_realistic_T33 \
+  --conditions auto:phase2_realistic_T35 \
   --datatier GEN-SIM-RECO,DQMIO \
   -n 100 \
   --eventcontent RECOSIM,DQM \

@@ -46,14 +46,14 @@ scram b -r -j 16
 echo "Starting LST test..."
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
-  --conditions auto:phase2_realistic_T33 \
+  --conditions auto:phase2_realistic_T35 \
   --datatier GEN-SIM-RECO,DQMIO \
   -n 100 \
   --eventcontent RECOSIM,DQM \
   --geometry ExtendedRun4D110 \
   --era Phase2C17I13M9 \
   --procModifiers trackingIters01,trackingLST \
-  --filein file:/data2/segmentlinking/CMSSW_12_2_0_pre2/step2_29834.1_100Events.root \
+  --filein file:/data2/segmentlinking/step2_29834.1_100Events.root \
   --fileout file:step3_out.root \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
