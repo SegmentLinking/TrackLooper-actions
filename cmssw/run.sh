@@ -9,9 +9,6 @@ CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d
 # Print all commands and exit on error
 set -e -v
 
-# Set up github config to avoid issues
-git config user.email "gha@example.com" && git config user.name "GHA"
-
 echo "Initializing CMSSW..."
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 scramv1 project CMSSW $CMSSW_VERSION
@@ -21,6 +18,9 @@ git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink
 git fetch SegLink refs/pull/${PR_NUMBER}/head:pr_branch
+
+# Set up github config to avoid issues
+git config user.email "gha@example.com" && git config user.name "GHA"
 
 # Merge target branch into master in case they are different
 git checkout SegLink/master
