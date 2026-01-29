@@ -74,15 +74,15 @@ runs:
       run: |
         docker pull ariostas/el8:standalone
         docker run --rm \
-          -v ${{ github.workspace }}:/home/TrackLooper
-          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch
-          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch
-          -w /home/TrackLooper
-          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
-          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
-          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
-          -e LOW_PT=${{ inputs.low-pt }}
-          -e RUNS_ON=${{ inputs.runs-on }}
+          -v ${{ github.workspace }}:/home/TrackLooper \
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
+          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
+          -w /home/TrackLooper \
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
+          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }} \
+          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }} \
+          -e LOW_PT=${{ inputs.low-pt }} \
+          -e RUNS_ON=${{ inputs.runs-on }} \
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
           ariostas/el8:standalone ./run.sh
     - name: Build and run
