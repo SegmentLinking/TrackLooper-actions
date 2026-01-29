@@ -87,7 +87,7 @@ echo "Running 29834.1 (+LST) workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsDriver.py step4 \
   -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM \
-  --conditions auto:phase2_realistic_T33 \
+  --conditions auto:phase2_realistic_T35 \
   --mc \
   --geometry ExtendedRun4D110 \
   --scenario pp \
