@@ -70,11 +70,10 @@ runs:
           return pullRequest.base.ref;
     - name: Build and run in Docker container
       if: inputs.runs-on != 'self-hosted'
-      uses: addnab/docker-run-action@v3
-      with:
-        image: ariostas/el8:standalone
-        shell: bash
-        options: >
+      shell: bash
+      run: |
+        docker pull ariostas/el8:standalone
+        docker run --rm \
           -v ${{ github.workspace }}:/home/TrackLooper
           -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch
           -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch
@@ -84,8 +83,8 @@ runs:
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
           -e LOW_PT=${{ inputs.low-pt }}
           -e RUNS_ON=${{ inputs.runs-on }}
-          -e REQUIRED_PRS=${{ inputs.required-prs }}
-        run: ./run.sh
+          -e REQUIRED_PRS=${{ inputs.required-prs }} \
+          ariostas/el8:standalone ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash
