@@ -46,10 +46,11 @@ cd standalone
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
-lst_make_tracklooper -mAs
+export MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "4")
 LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
 LST_BIN=$([[ $RUNS_ON == "self-hosted" ]] && echo "lst_cuda" || echo "lst_cpu")
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
+lst_make_tracklooper -mAs
 echo "Running LST..."
 $LST_BIN -i PU200 -o LSTNtuple_after.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_PR.txt
 if [[ $RUNS_ON == "self-hosted" ]]; then
