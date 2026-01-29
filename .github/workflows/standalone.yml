@@ -92,7 +92,7 @@ jobs:
         with:
           script: |
             github.rest.issues.createComment({
-              issue_number: inputs.pr-number,
+              issue_number: '${{ inputs.pr-number }}',
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `${{ steps.build-and-run.outputs.comment }}`
@@ -103,7 +103,7 @@ jobs:
         with:
           script: |
             github.rest.issues.createComment({
-              issue_number: inputs.pr-number,
+              issue_number: '${{ inputs.pr-number }}',
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `There was a problem while building and running in standalone mode. The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
