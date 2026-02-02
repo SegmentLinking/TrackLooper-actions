@@ -12,6 +12,10 @@ on:
         description: Comma-separated list of required PR numbers that must be merged before checks are run
         required: false
         type: string
+      packages:
+        description: Comma-separated list of extra packages to add
+        required: false
+        type: string
     secrets:
       app-id:
         required: true
@@ -56,6 +60,7 @@ jobs:
         with:
           pr-number: ${{ inputs.pr-number }}
           required-prs: "${{ inputs.required-prs }}"
+          packages: "${{ inputs.packages }}"
       - name: Create App Token
         if: always()
         uses: actions/create-github-app-token@v1

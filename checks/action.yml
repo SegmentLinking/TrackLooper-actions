@@ -7,6 +7,9 @@ inputs:
   required-prs:
     description: Comma-separated list of required PR numbers that must be merged before checks are run
     required: false
+  packages:
+    description: Comma-separated list of extra packages to add
+    required: false
 runs:
   using: composite
   steps:
@@ -54,4 +57,5 @@ runs:
           -e PR_NUMBER=${{ inputs.pr-number }}
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
           -e REQUIRED_PRS=${{ inputs.required-prs }}
+          -e PACKAGES=${{ inputs.packages }}
         run: ./run.sh

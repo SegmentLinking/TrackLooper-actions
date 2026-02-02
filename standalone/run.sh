@@ -24,7 +24,7 @@ git fetch --unshallow || echo "" # It might be worth switching actions/checkout 
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
   git checkout origin/master
 else
-  git remote add official-cmssw https://github.com/cms-sw/cmssw.git
+  git remote add official-cmssw https://github.com/cms-sw/cmssw.git || echo "Remote already exists"
   git fetch official-cmssw
   git checkout $RELEASE
 fi
@@ -46,6 +46,14 @@ git checkout pr_branch
 if [[ -n "$TARGET_BRANCH" ]]; then
   git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
 fi
+
+# Add extra packages
+CLEAN_LIST=$(echo "${PACKAGES}" | tr -d '[:space:]')
+IFS=',' read -ra PKGS <<< "$CLEAN_LIST"
+for pkg in "${PKGS[@]}"; do
+  echo "Adding extra package ${pkg}"
+  git sparse-checkout add $pkg
+done
 
 # Download data files
 cd RecoTracker/LSTCore

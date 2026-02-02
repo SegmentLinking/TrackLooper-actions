@@ -58,6 +58,13 @@ git cms-addpkg HeterogeneousCore/AlpakaMath || echo "Package not found"
 git cms-addpkg DQM/TrackingMonitorSource || echo "Package not found"
 git cms-addpkg HLTrigger/Configuration || echo "Package not found"
 git cms-addpkg DataFormats/Common || echo "Package not found"
+# Add extra packages
+CLEAN_LIST=$(echo "${PACKAGES}" | tr -d '[:space:]')
+IFS=',' read -ra PKGS <<< "$CLEAN_LIST"
+for pkg in "${PKGS[@]}"; do
+  echo "Adding extra package ${pkg}"
+  git cms-addpkg $pkg
+done
 # Temporarily merge target branch
 git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-checkdeps -D

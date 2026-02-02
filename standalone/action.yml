@@ -16,6 +16,9 @@ inputs:
   release:
     description: CMSSW release to use
     required: false
+  packages:
+    description: Comma-separated list of extra packages to add
+    required: false
 outputs:
   archive-repo:
     description: The repository where the plots will be stored
@@ -88,6 +91,7 @@ runs:
           -e RUNS_ON=${{ inputs.runs-on }} \
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
           -e RELEASE=${{ inputs.release }} \
+          -e PACKAGES=${{ inputs.packages }} \
           ariostas/el8:standalone ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
@@ -100,6 +104,7 @@ runs:
         RUNS_ON: ${{ inputs.runs-on }}
         REQUIRED_PRS: ${{ inputs.required-prs }}
         RELEASE: ${{ inputs.release }}
+        PACKAGES: ${{ inputs.packages }}
     - name: Set output comment
       id: output-comment
       shell: bash
