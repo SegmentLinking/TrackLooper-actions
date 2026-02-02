@@ -28,6 +28,12 @@ for pkg in "${PKGS[@]}"; do
   echo "Adding extra package ${pkg}"
   git cms-addpkg $pkg
 done
+# Add packages that changed in the PR
+PKGS=$(git diff --name-only reference_branch...pr_branch | awk -F/ 'NF>=2 {print $1"/"$2} NF<2 {print "."}' | sort -u)
+for pkg in $PKGS; do
+  echo "Adding changed package ${pkg}"
+  git cms-addpkg $pkg
+done
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
 git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)

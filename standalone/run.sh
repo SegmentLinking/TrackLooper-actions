@@ -54,6 +54,12 @@ for pkg in "${PKGS[@]}"; do
   echo "Adding extra package ${pkg}"
   git sparse-checkout add $pkg
 done
+# Add packages that changed in the PR
+PKGS=$(git diff --name-only reference_branch...pr_branch | awk -F/ 'NF>=2 {print $1"/"$2} NF<2 {print "."}' | sort -u)
+for pkg in $PKGS; do
+  echo "Adding changed package ${pkg}"
+  git sparse-checkout add $pkg
+done
 
 # Download data files
 cd RecoTracker/LSTCore
