@@ -24,6 +24,8 @@ git fetch --unshallow || echo "" # It might be worth switching actions/checkout 
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
   git checkout origin/master
 else
+  git remote add official-cmssw https://github.com/cms-sw/cmssw.git
+  git fetch official-cmssw
   git checkout $RELEASE
 fi
 git switch -c reference_branch
