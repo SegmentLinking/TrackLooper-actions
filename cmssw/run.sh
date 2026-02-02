@@ -32,7 +32,7 @@ if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
 fi
 git switch -c reference_branch
 # Merge reference branch into master/release in case they are different
-if [[ -n "$TARGET_BRANCH" ]]; then
+if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
   git merge SegLink/$TARGET_BRANCH || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs

@@ -29,7 +29,7 @@ else
   git checkout $RELEASE
 fi
 git switch -c reference_branch
-if [[ -n "$TARGET_BRANCH" ]]; then
+if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
   git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs
