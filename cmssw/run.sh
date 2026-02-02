@@ -4,7 +4,11 @@
 export SCRAM_ARCH=el8_amd64_gcc13
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+else
+  CMSSW_VERSION=$RELEASE
+fi
 
 # Print all commands and exit on error
 set -e -v
@@ -23,8 +27,11 @@ git fetch SegLink refs/pull/${PR_NUMBER}/head:pr_branch
 git config user.email "gha@example.com" && git config user.name "GHA"
 
 # Merge target branch into master in case they are different
-git checkout SegLink/master
-git switch -c master
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  git checkout SegLink/master
+fi
+git switch -c reference_branch
+# Merge reference branch into master/release in case they are different
 if [[ -n "$TARGET_BRANCH" ]]; then
   git merge SegLink/$TARGET_BRANCH || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
@@ -52,7 +59,7 @@ git cms-addpkg DQM/TrackingMonitorSource || echo "Package not found"
 git cms-addpkg HLTrigger/Configuration || echo "Package not found"
 git cms-addpkg DataFormats/Common || echo "Package not found"
 # Temporarily merge target branch
-git merge master --allow-unrelated-histories || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-checkdeps -D
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
@@ -107,7 +114,7 @@ if [[ -z "$TARGET_BRANCH" ]]; then
 fi
 
 # Checkout the target branch so we can compare what has changed
-git checkout master
+git checkout reference_branch
 git cms-checkdeps -D
 
 # Build and run target

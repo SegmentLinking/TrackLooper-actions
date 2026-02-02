@@ -20,6 +20,10 @@ on:
         description: Run the low pT setup
         required: false
         type: string
+      release:
+        description: CMSSW release to use
+        required: false
+        type: string
     secrets:
       app-id:
         required: true
@@ -77,6 +81,7 @@ jobs:
           pr-number: ${{ inputs.pr-number }}
           runs-on: ${{ inputs.runs-on }}
           low-pt: ${{ inputs.low-pt }}
+          release: ${{ inputs.release }}
       # - name: Upload plots to archival repo
       #   if: inputs.pr-number != '0'
       #   uses: s0/git-publish-subdir-action@develop

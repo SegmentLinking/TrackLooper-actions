@@ -13,6 +13,9 @@ inputs:
   low-pt:
     description: Run the low pT setup
     required: false
+  release:
+    description: CMSSW release to use
+    required: false
 outputs:
   archive-repo:
     description: The repository where the plots will be stored
@@ -84,6 +87,7 @@ runs:
           -e LOW_PT=${{ inputs.low-pt }} \
           -e RUNS_ON=${{ inputs.runs-on }} \
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
+          -e RELEASE=${{ inputs.release }} \
           ariostas/el8:standalone ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
@@ -95,6 +99,7 @@ runs:
         LOW_PT: ${{ inputs.low-pt }}
         RUNS_ON: ${{ inputs.runs-on }}
         REQUIRED_PRS: ${{ inputs.required-prs }}
+        RELEASE: ${{ inputs.release }}
     - name: Set output comment
       id: output-comment
       shell: bash

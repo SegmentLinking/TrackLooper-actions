@@ -4,7 +4,11 @@
 export SCRAM_ARCH=el8_amd64_gcc13
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+else
+  export FORCED_CMSSW_VERSION=$RELEASE
+fi
 
 # Print all commands and exit on error
 set -e -v
@@ -16,9 +20,13 @@ git config user.email "gha@example.com" && git config user.name "GHA"
 git checkout -b pr_branch
 git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
 
-# Merge target branch into master in case they are different
-git checkout origin/master
-git switch -c master
+# Merge reference branch into master/release in case they are different
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  git checkout origin/master
+else
+  git checkout $RELEASE
+fi
+git switch -c reference_branch
 if [[ -n "$TARGET_BRANCH" ]]; then
   git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
@@ -31,10 +39,10 @@ for pr in "${PRS[@]}"; do
   git merge pr-${pr} --allow-unrelated-histories -m "Merge PR${pr}"
 done
 
-# Go back to PR branch and merge target
+# Go back to PR branch and merge reference
 git checkout pr_branch
 if [[ -n "$TARGET_BRANCH" ]]; then
-  git merge master --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
+  git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
 fi
 
 # Download data files
@@ -68,7 +76,7 @@ python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "valid
 # Checkout the target branch so we can compare what has changed
 git stash
 PRSHA=$(git rev-parse HEAD)
-git checkout origin/${TARGET_BRANCH}
+git checkout reference_branch
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
 IFS=',' read -ra PRS <<< "$CLEAN_LIST"
