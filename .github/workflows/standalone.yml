@@ -82,15 +82,15 @@ jobs:
           runs-on: ${{ inputs.runs-on }}
           low-pt: ${{ inputs.low-pt }}
           release: ${{ inputs.release }}
-      # - name: Upload plots to archival repo
-      #   if: inputs.pr-number != '0'
-      #   uses: s0/git-publish-subdir-action@develop
-      #   env:
-      #     REPO: git@github.com:${{ steps.build-and-run.outputs.archive-repo }}.git
-      #     BRANCH: ${{ steps.build-and-run.outputs.archive-branch }}
-      #     FOLDER: ${{ steps.build-and-run.outputs.archive-dir }}
-      #     SSH_PRIVATE_KEY: ${{ secrets.deploy-private-key }}
-      #     TARGET_DIR: ${{ steps.build-and-run.outputs.archive-dir }}
+      - name: Upload plots to archival repo
+        if: inputs.pr-number != '0'
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: git@github.com:${{ steps.build-and-run.outputs.archive-repo }}.git
+          BRANCH: ${{ steps.build-and-run.outputs.archive-branch }}
+          FOLDER: ${{ steps.build-and-run.outputs.archive-dir }}
+          SSH_PRIVATE_KEY: ${{ secrets.deploy-private-key }}
+          TARGET_DIR: ${{ steps.build-and-run.outputs.archive-dir }}
       - name: Comment on PR
         if: inputs.pr-number != '0'
         uses: actions/github-script@v7
