@@ -1,0 +1,81 @@
+name: SCRAM Checks
+
+on:
+  workflow_call:
+    inputs:
+      pr-number:
+        description: PR number
+        required: true
+        # For some reason it doesn't work if we use `number` here
+        type: string
+      required-prs:
+        description: Comma-separated list of required PR numbers that must be merged before checks are run
+        required: false
+        type: string
+      packages:
+        description: Comma-separated list of extra packages to add
+        required: false
+        type: string
+    secrets:
+      app-id:
+        required: true
+      app-private-key:
+        required: true
+
+
+jobs:
+  checks:
+    name: Run checks for PR${{ inputs.pr-number }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out PR
+        uses: actions/checkout@v4
+        with:
+          repository: SegmentLinking/cmssw
+          ref: refs/pull/${{ inputs.pr-number }}/head
+      - name: Get commit SHA
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "COMMIT_SHA=$sha" >> $GITHUB_ENV
+      - name: Create App Token
+        uses: actions/create-github-app-token@v1
+        id: app-token
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+          skip-token-revoke: true
+      - name: Create in progress check
+        uses: LouisBrunner/checks-action@v2.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          sha: ${{ env.COMMIT_SHA }}
+          name: Static Checks
+          status: in_progress
+          details_url: ${{ github.server_url }}/SegmentLinking/cmssw/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "This check has started...", "summary": "The logs can be found [here](${{ github.server_url }}/SegmentLinking/cmssw/actions/runs/${{ github.run_id }})."}
+      - name: Run static checks with SCRAM
+        timeout-minutes: 100
+        uses: SegmentLinking/TrackLooper-actions/checks@main
+        with:
+          pr-number: ${{ inputs.pr-number }}
+          required-prs: ${{ inputs.required-prs }}
+          packages: ${{ inputs.packages }}
+      - name: Create App Token
+        if: always()
+        uses: actions/create-github-app-token@v1
+        id: app-token-end
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+      - name: Create completed check
+        uses: LouisBrunner/checks-action@v2.0.0
+        if: always()
+        with:
+          token: ${{ steps.app-token-end.outputs.token }}
+          sha: ${{ env.COMMIT_SHA }}
+          name: Static Checks
+          conclusion: ${{ job.status }}
+          details_url: ${{ github.server_url }}/SegmentLinking/cmssw/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "Status: ${{ job.status }}", "summary": "The logs can be found [here](${{ github.server_url }}/SegmentLinking/cmssw/actions/runs/${{ github.run_id }})."}

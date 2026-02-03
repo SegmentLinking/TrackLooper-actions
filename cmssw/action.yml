@@ -1,24 +1,36 @@
-name: 'Test CMSSW integration'
-description: 'Builds and tests the integration of LST into CMSSW'
+name: CMSSW Testing
+description: Builds and tests the integration of LST into CMSSW
 inputs:
   pr-number:
-    description: 'PR number'
+    description: PR number (if 0, use master and skip comparisons)
     required: true
+  required-prs:
+    description: Comma-separated list of required PR numbers that must be merged before checks are run
+    required: false
+  runs-on:
+    description: Runner where to run the workflow
+    required: false
   low-pt:
-    description: 'Controls whether the low pT setup should be used'
-    required: true
+    description: Run the low pT setup
+    required: false
+  release:
+    description: CMSSW release to use
+    required: false
+  packages:
+    description: Comma-separated list of extra packages to add
+    required: false
 outputs:
   archive-repo:
-    description: "The repository where the plots will be stored"
+    description: The repository where the plots will be stored
     value: ${{ steps.output-vars.outputs.archive-repo }}
   archive-branch:
-    description: "The branch of the repository where the plots will be stored"
+    description: The branch of the repository where the plots will be stored
     value: ${{ steps.output-vars.outputs.archive-branch }}
   archive-dir:
-    description: "The directory containing the data that will be stored"
+    description: The directory containing the data that will be stored
     value: ${{ steps.output-vars.outputs.archive-dir }}
   comment:
-    description: "The comment that to leave in the PR if the test passes"
+    description: The comment that to leave in the PR if the test passes
     value: ${{ steps.output-vars.outputs.comment }}
 runs:
   using: 'composite'
@@ -59,6 +71,7 @@ runs:
         echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
     - name: Mount cvmfs
+      if: inputs.runs-on != 'self-hosted'
       uses: cvmfs-contrib/github-action-cvmfs@v5
       with:
         cvmfs_repositories: "cms.cern.ch,cms-ib.cern.ch"
@@ -69,6 +82,7 @@ runs:
         ls /cvmfs/cms-ib.cern.ch/ > /dev/null
       shell: bash
     - name: Remove some pre-installed software
+      if: inputs.runs-on != 'self-hosted'
       shell: bash
       run: |
         sudo rm -rf /usr/share/dotnet
@@ -90,18 +104,35 @@ runs:
           });
           return pullRequest.base.ref;
     - name: Build and run in Docker container
-      uses: addnab/docker-run-action@v3
-      with:
-        image: ariostas/el8:cmssw
-        shell: bash
-        options: >
-          -v ${{ github.workspace }}:/home/TrackLooper
-          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch
-          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch
-          -w /home/TrackLooper
-          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
-          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
-          -e PR_NUMBER=${{ inputs.pr-number }}
-          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
-          -e LOW_PT=${{ inputs.low-pt }}
-        run: ./run.sh
+      if: inputs.runs-on != 'self-hosted'
+      shell: bash
+      run: |
+        docker pull ariostas/el8:cmssw
+        docker run --rm \
+          -v ${{ github.workspace }}:/home/TrackLooper \
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
+          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
+          -w /home/TrackLooper \
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
+          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }} \
+          -e PR_NUMBER=${{ inputs.pr-number }} \
+          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }} \
+          -e LOW_PT=${{ inputs.low-pt }} \
+          -e RUNS_ON=${{ inputs.runs-on }} \
+          -e REQUIRED_PRS=${{ inputs.required-prs }} \
+          -e RELEASE=${{ inputs.release }} \
+          -e PACKAGES=${{ inputs.packages }} \
+          ariostas/el8:cmssw ./run.sh
+    - name: Build and run
+      if: inputs.runs-on == 'self-hosted'
+      shell: bash
+      run: ./run.sh
+      env:
+        ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
+        LOW_PT: ${{ inputs.low-pt }}
+        RUNS_ON: ${{ inputs.runs-on }}
+        REQUIRED_PRS: ${{ inputs.required-prs }}
+        RELEASE: ${{ inputs.release }}
+        PACKAGES: ${{ inputs.packages }}
