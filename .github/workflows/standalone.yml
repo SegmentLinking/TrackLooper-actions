@@ -83,6 +83,7 @@ jobs:
         uses: SegmentLinking/TrackLooper-actions/standalone@use_reusable_workflows
         with:
           pr-number: ${{ inputs.pr-number }}
+          required-prs: ${{ inputs.required-prs }}
           runs-on: ${{ inputs.runs-on }}
           low-pt: ${{ inputs.low-pt }}
           release: ${{ inputs.release }}

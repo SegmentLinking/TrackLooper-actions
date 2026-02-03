@@ -59,8 +59,8 @@ jobs:
         uses: SegmentLinking/TrackLooper-actions/checks@use_reusable_workflows
         with:
           pr-number: ${{ inputs.pr-number }}
-          required-prs: "${{ inputs.required-prs }}"
-          packages: "${{ inputs.packages }}"
+          required-prs: ${{ inputs.required-prs }}
+          packages: ${{ inputs.packages }}
       - name: Create App Token
         if: always()
         uses: actions/create-github-app-token@v1
