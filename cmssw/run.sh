@@ -48,16 +48,6 @@ done
 git checkout pr_branch
 PRSHA=$(git rev-parse HEAD)
 git cms-addpkg RecoTracker/LST RecoTracker/LSTCore
-git cms-addpkg Configuration/ProcessModifiers || echo "Package not found"
-git cms-addpkg Configuration/PyReleaseValidation || echo "Package not found"
-git cms-addpkg RecoTracker/ConversionSeedGenerators || echo "Package not found"
-git cms-addpkg RecoTracker/FinalTrackSelectors || echo "Package not found"
-git cms-addpkg RecoTracker/IterativeTracking || echo "Package not found"
-git cms-addpkg HeterogeneousCore/AlpakaInterface || echo "Package not found"
-git cms-addpkg HeterogeneousCore/AlpakaMath || echo "Package not found"
-git cms-addpkg DQM/TrackingMonitorSource || echo "Package not found"
-git cms-addpkg HLTrigger/Configuration || echo "Package not found"
-git cms-addpkg DataFormats/Common || echo "Package not found"
 # Add extra packages
 CLEAN_LIST=$(echo "${PACKAGES}" | tr -d '[:space:]')
 IFS=',' read -ra PKGS <<< "$CLEAN_LIST"

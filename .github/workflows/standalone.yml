@@ -49,13 +49,6 @@ jobs:
           sparse-checkout: |
             RecoTracker/LST
             RecoTracker/LSTCore
-            Configuration/ProcessModifiers
-            RecoTracker/ConversionSeedGenerators
-            RecoTracker/FinalTrackSelectors
-            RecoTracker/IterativeTracking
-            HeterogeneousCore/AlpakaInterface
-            HeterogeneousCore/AlpakaMath
-            DataFormats/Portable
       - name: Get commit SHA
         run: |
           sha=$(git rev-parse HEAD)

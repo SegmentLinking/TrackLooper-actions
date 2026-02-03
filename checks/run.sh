@@ -20,7 +20,7 @@ git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $TARGET_BRANCH
-git cms-addpkg RecoTracker/LST RecoTracker/LSTCore Configuration/ProcessModifiers RecoTracker/ConversionSeedGenerators RecoTracker/FinalTrackSelectors RecoTracker/IterativeTracking
+git cms-addpkg RecoTracker/LST RecoTracker/LSTCore
 # Add extra packages
 CLEAN_LIST=$(echo "${PACKAGES}" | tr -d '[:space:]')
 IFS=',' read -ra PKGS <<< "$CLEAN_LIST"
