@@ -70,7 +70,7 @@ jobs:
       - name: Build and run PR
         timeout-minutes: 200
         id: build-and-run
-        uses: SegmentLinking/TrackLooper-actions/cmssw@use_reusable_workflows
+        uses: SegmentLinking/TrackLooper-actions/cmssw@main
         with:
           pr-number: ${{ inputs.pr-number }}
           required-prs: ${{ inputs.required-prs }}

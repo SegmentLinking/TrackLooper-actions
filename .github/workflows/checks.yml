@@ -56,7 +56,7 @@ jobs:
             {"title": "This check has started...", "summary": "The logs can be found [here](${{ github.server_url }}/SegmentLinking/cmssw/actions/runs/${{ github.run_id }})."}
       - name: Run static checks with SCRAM
         timeout-minutes: 100
-        uses: SegmentLinking/TrackLooper-actions/checks@use_reusable_workflows
+        uses: SegmentLinking/TrackLooper-actions/checks@main
         with:
           pr-number: ${{ inputs.pr-number }}
           required-prs: ${{ inputs.required-prs }}

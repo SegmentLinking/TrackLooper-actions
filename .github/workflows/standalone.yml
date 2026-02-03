@@ -80,7 +80,7 @@ jobs:
       - name: Build and run PR
         timeout-minutes: 60
         id: build-and-run
-        uses: SegmentLinking/TrackLooper-actions/standalone@use_reusable_workflows
+        uses: SegmentLinking/TrackLooper-actions/standalone@main
         with:
           pr-number: ${{ inputs.pr-number }}
           required-prs: ${{ inputs.required-prs }}
