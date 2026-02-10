@@ -21,7 +21,11 @@ eval `scramv1 runtime -sh`
 git cms-init --upstream-only
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink
-git fetch SegLink refs/pull/${PR_NUMBER}/head:pr_branch
+if [[ -n "$TARGET_BRANCH" ]]; then
+  git fetch SegLink refs/pull/${PR_NUMBER}/head:pr_branch
+else
+  git fetch SegLink master:pr_branch
+fi
 
 # Set up github config to avoid issues
 git config user.email "gha@example.com" && git config user.name "GHA"

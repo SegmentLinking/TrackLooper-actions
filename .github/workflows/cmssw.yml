@@ -79,6 +79,7 @@ jobs:
           release: ${{ inputs.release }}
           packages: ${{ inputs.packages }}
       - name: Upload plots to archival repo
+        if: inputs.pr-number != '0'
         uses: s0/git-publish-subdir-action@develop
         env:
           REPO: git@github.com:${{ steps.build-and-run.outputs.archive-repo }}.git

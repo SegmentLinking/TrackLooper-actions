@@ -92,6 +92,7 @@ runs:
         sudo rm -rf /usr/local/share/boost
         sudo rm -rf "$AGENT_TOOLSDIRECTORY"
     - name: Get PR target branch
+      if: inputs.pr-number != '0'
       id: get_target_branch
       uses: actions/github-script@v8
       with:
