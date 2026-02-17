@@ -44,18 +44,17 @@ runs:
           });
           return pullRequest.base.ref;
     - name: Run checks in Docker container
-      uses: addnab/docker-run-action@v3
-      with:
-        image: cmssw/el8:x86_64
-        shell: bash
-        options: >
-          -v ${{ github.workspace }}:/home/TrackLooper
-          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch
-          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch
-          -w /home/TrackLooper
-          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }}
-          -e PR_NUMBER=${{ inputs.pr-number }}
-          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }}
-          -e REQUIRED_PRS=${{ inputs.required-prs }}
-          -e PACKAGES=${{ inputs.packages }}
-        run: ./run.sh
+      shell: bash
+      run: |
+        docker pull cmssw/el8:x86_64
+        docker run --rm \
+          -v ${{ github.workspace }}:/home/TrackLooper \
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
+          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
+          -w /home/TrackLooper \
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
+          -e PR_NUMBER=${{ inputs.pr-number }} \
+          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }} \
+          -e REQUIRED_PRS=${{ inputs.required-prs }} \
+          -e PACKAGES=${{ inputs.packages }} \
+          cmssw/el8:x86_64 ./run.sh
