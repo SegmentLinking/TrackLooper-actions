@@ -109,12 +109,13 @@ runs:
       id: output-comment
       shell: bash
       run: |
+        CPU_OR_GPU="$( [[ ${{ inputs.runs-on }} == 'self-hosted' ]] && echo 'GPU' || echo 'CPU' )"
         LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
         ARCHIVE_REPO=${{ steps.output-vars.outputs.archive-repo }}
         ARCHIVE_BRANCH=${{ steps.output-vars.outputs.archive-branch }}
         ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
         COMMENT=$(cat <<EOF
-        The PR was built and ran successfully in standalone mode${LOW_PT}. Here are some of the comparison plots.
+        The PR was built and ran successfully in standalone mode${LOW_PT} running on ${CPU_OR_GPU}. Here are some of the comparison plots.
 
         <table>
           <tr>

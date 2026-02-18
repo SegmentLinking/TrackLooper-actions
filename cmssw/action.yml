@@ -44,6 +44,7 @@ runs:
       id: output-vars
       shell: bash
       run: |
+        CPU_OR_GPU="$( [[ ${{ inputs.runs-on }} == 'self-hosted' ]] && echo 'GPU' || echo 'CPU' )"
         LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
         ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
@@ -52,7 +53,7 @@ runs:
         ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_cmssw${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
-        The PR was built and ran successfully with CMSSW${LOW_PT}. Here are some plots.
+        The PR was built and ran successfully with CMSSW${LOW_PT} running on ${CPU_OR_GPU}. Here are some plots.
         <table>
           <tr>
             OOTB All Tracks
