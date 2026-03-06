@@ -21,6 +21,7 @@ git fetch SegLink refs/pull/${PR_NUMBER}/head:SegLink_cmssw
 git checkout SegLink_cmssw
 git fetch SegLink $TARGET_BRANCH
 git cms-addpkg RecoTracker/LST RecoTracker/LSTCore
+git cms-addpkg RecoTracker/LSTGeometry || echo "Package does not exist"
 # Add extra packages
 CLEAN_LIST=$(echo "${PACKAGES}" | tr -d '[:space:]')
 IFS=',' read -ra PKGS <<< "$CLEAN_LIST"
