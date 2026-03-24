@@ -61,7 +61,7 @@ jobs:
           private-key: ${{ secrets.app-private-key }}
           skip-token-revoke: true
       - name: Create in progress check
-        uses: LouisBrunner/checks-action@v2.0.0
+        uses: LouisBrunner/checks-action@v3.0.0
         with:
           token: ${{ steps.app-token.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
@@ -120,7 +120,7 @@ jobs:
           app-id: ${{ secrets.app-id }}
           private-key: ${{ secrets.app-private-key }}
       - name: Create completed check
-        uses: LouisBrunner/checks-action@v2.0.0
+        uses: LouisBrunner/checks-action@v3.0.0
         if: always()
         with:
           token: ${{ steps.app-token-end.outputs.token }}
