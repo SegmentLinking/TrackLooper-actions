@@ -1,0 +1,134 @@
+name: HLT Testing
+
+on:
+  workflow_call:
+    # Seems like inputs other than `string` don't work well here
+    inputs:
+      pr-number:
+        description: PR number (if 0, use master and skip comparisons)
+        required: true
+        type: string
+      required-prs:
+        description: Comma-separated list of required PR numbers that must be merged before checks are run
+        required: false
+        type: string
+      runs-on:
+        description: Runner where to run the workflow
+        required: true
+        type: string
+      low-pt:
+        description: Run the low pT setup
+        required: false
+        type: string
+      release:
+        description: CMSSW release to use
+        required: false
+        type: string
+      packages:
+        description: Comma-separated list of extra packages to add
+        required: false
+        type: string
+      procmodifiers:
+        description: Comma-separated list of process modifiers
+        required: false
+        type: string
+    secrets:
+      app-id:
+        required: true
+      app-private-key:
+        required: true
+      deploy-private-key:
+        required: true
+
+
+jobs:
+  test:
+    name: Run HLT workflow for ${{ inputs.pr-number != '0' && format('PR{0}', inputs.pr-number) || 'master' }}
+    runs-on: ${{ inputs.runs-on }}
+    steps:
+      - name: Checkout PR
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.pr-number != '0' && format('refs/pull/{0}/head', inputs.pr-number) || 'master' }}
+      - name: Get commit SHA
+        run: |
+          sha=$(git rev-parse HEAD)
+          echo "COMMIT_SHA=$sha" >> $GITHUB_ENV
+      - name: Create App Token
+        uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+          skip-token-revoke: true
+      - name: Create in progress check
+        uses: LouisBrunner/checks-action@v3.0.0
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          sha: ${{ env.COMMIT_SHA }}
+          name: Run HLT workflow${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          status: in_progress
+          details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "This check has started...", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
+      - name: Build and run PR
+        timeout-minutes: 200
+        id: build-and-run
+        uses: SegmentLinking/TrackLooper-actions/hlt@devel
+        with:
+          pr-number: ${{ inputs.pr-number }}
+          required-prs: ${{ inputs.required-prs }}
+          runs-on: ${{ inputs.runs-on }}
+          low-pt: ${{ inputs.low-pt }}
+          release: ${{ inputs.release }}
+          packages: ${{ inputs.packages }}
+          procmodifiers: ${{ inputs.procmodifiers }}
+      - name: Upload plots to archival repo
+        if: inputs.pr-number != '0'
+        uses: s0/git-publish-subdir-action@develop
+        env:
+          REPO: git@github.com:${{ steps.build-and-run.outputs.archive-repo }}.git
+          BRANCH: ${{ steps.build-and-run.outputs.archive-branch }}
+          FOLDER: ${{ steps.build-and-run.outputs.archive-dir }}
+          SSH_PRIVATE_KEY: ${{ secrets.deploy-private-key }}
+          TARGET_DIR: ${{ steps.build-and-run.outputs.archive-dir }}
+      - name: Comment on PR
+        if: inputs.pr-number != '0'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: '${{ inputs.pr-number }}',
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${{ steps.build-and-run.outputs.comment }}`
+            })
+      - name: Comment on PR if job failed.
+        if: failure() && inputs.pr-number != '0'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: '${{ inputs.pr-number }}',
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `There was a problem while building and running with HLT workflow. The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).`
+            })
+      - name: Create App Token
+        if: always()
+        uses: actions/create-github-app-token@v3
+        id: app-token-end
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+      - name: Create completed check
+        uses: LouisBrunner/checks-action@v3.0.0
+        if: always()
+        with:
+          token: ${{ steps.app-token-end.outputs.token }}
+          sha: ${{ env.COMMIT_SHA }}
+          name: Run CMSSW HLT workflow${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          conclusion: ${{ job.status }}
+          details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "Status: ${{ job.status }}", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
