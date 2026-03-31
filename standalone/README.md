@@ -6,7 +6,12 @@ The action in this directory tests the standalone version of [LST](https://githu
 
 | Name | Description | Required |
 | --- | --- | --- |
-| `pr-number` | The PR number. | Yes |
+| `pr-number` | PR number (if 0, use master and skip comparisons) | True |
+| `required-prs` | Comma-separated list of required PR numbers that must be merged before checks are run | False |
+| `runs-on` | Runner where to run the workflow | False |
+| `low-pt` | Run the low pT setup | False |
+| `release` | CMSSW release to use | False |
+| `packages` | Comma-separated list of extra packages to add | False |
 
 ## Outputs
 

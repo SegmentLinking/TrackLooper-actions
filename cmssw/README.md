@@ -1,13 +1,17 @@
-# TrackLooper CMSSW Testing Action (self-hosted)
+# TrackLooper CMSSW Testing Action
 
-The action in this directory tests the cmssw integration of [LST](https://github.com/SegmentLinking/cmssw/tree/master/RecoTracker/LSTCore/standalone). This action builds the code from a Pull Request (PR), sets it up as an external package in CMSSW, and runs steps 3 and 4 of the 21034.1 workflow. The `action.yml` file contains the needed configuration and setup, and the `run.sh` file contains the testing script.
+The action in this directory tests the cmssw integration of [LST](https://github.com/SegmentLinking/cmssw/tree/master/RecoTracker/LSTCore/standalone). This action builds the code from a Pull Request (PR), and runs steps 3 and 4 of the 29834.1 workflow. The `action.yml` file contains the needed configuration and setup, and the `run.sh` file contains the testing script.
 
 ## Inputs
 
 | Name | Description | Required |
 | --- | --- | --- |
-| `pr-number` | The PR number. | Yes |
-| `cmssw-branch` | The branch of the CMSSW repository that should be used for testing. This can be used when making parallel changes in the TrackLooper and CMSSW repositories. If this input is set to `"default"`, then the default branch configured in `run.sh` will be used. | Yes |
+| `pr-number` | PR number (if 0, use master and skip comparisons) | True |
+| `required-prs` | Comma-separated list of required PR numbers that must be merged before checks are run | False |
+| `runs-on` | Runner where to run the workflow | False |
+| `low-pt` | Run the low pT setup | False |
+| `release` | CMSSW release to use | False |
+| `packages` | Comma-separated list of extra packages to add | False |
 
 ## Outputs
 

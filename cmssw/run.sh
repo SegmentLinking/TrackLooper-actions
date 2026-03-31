@@ -72,7 +72,11 @@ eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
 MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "4")
 scram b -r -j $MAXMAKETHREADS
-echo "Starting LST test..."
+echo "Setting up siteconf..."
+git clone https://github.com/cms-sw/siteconf.git
+sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.gov:3128"\/>/d' siteconf/local/JobConfig/site-local-config.xml
+export SITECONFIG_PATH=$PWD/siteconf/local
+echo "Running 29834.1 (+LST) workflow..."
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
@@ -93,11 +97,6 @@ if [[ "$LOW_PT" == "true" ]]; then
   lineno=$((lineno - 1))
   sed -i "${lineno}r ../../lowpt_mod.py" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 fi
-echo "Setting up siteconf..."
-git clone https://github.com/cms-sw/siteconf.git
-sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.gov:3128"\/>/d' siteconf/local/JobConfig/site-local-config.xml
-export SITECONFIG_PATH=$PWD/siteconf/local
-echo "Running 29834.1 (+LST) workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsDriver.py step4 \
   -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM \
