@@ -59,7 +59,7 @@ runs:
         The PR was built and ran successfully with HLT setup${LOW_PT} running on ${CPU_OR_GPU} (procModifiers = ${{ inputs.procmodifiers }}). Here are some plots.
         <table>
           <tr>
-            OOTB All Tracks
+            HLT General Plots
             <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/effandfakePtEtaPhi.png" alt="Efficiency and fake rate vs pT, eta, and phi"></td>
           </tr>
         </table>
