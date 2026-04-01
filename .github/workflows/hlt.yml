@@ -127,7 +127,7 @@ jobs:
         with:
           token: ${{ steps.app-token-end.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
-          name: Run CMSSW HLT workflow${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          name: Run HLT workflow${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
           conclusion: ${{ job.status }}
           details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           output: |
