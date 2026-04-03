@@ -72,7 +72,7 @@ jobs:
           output: |
             {"title": "This check has started...", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
       - name: Build and run PR
-        timeout-minutes: 200
+        timeout-minutes: 240
         id: build-and-run
         uses: SegmentLinking/TrackLooper-actions/hlt@devel
         with:
