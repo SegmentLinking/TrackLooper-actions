@@ -78,10 +78,10 @@ sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.g
 export SITECONFIG_PATH=$PWD/siteconf/local
 echo "Running HLT workflow..."
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
-if [[ -n "$PROCMODIFIERS" ]]; then
-  PROCMODIFIERS_STR="--procModifiers $PROCMODIFIERS"
+if [[ -n "$PROCMODIFIERS_PR" ]]; then
+  PROCMODIFIERS_PR_STR="--procModifiers $PROCMODIFIERS_PR"
 else
-  PROCMODIFIERS_STR=""
+  PROCMODIFIERS_PR_STR=""
 fi
 cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --processName=HLTX \
@@ -92,18 +92,18 @@ cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
   --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
   --fileout file:step2_out.root \
-  --python_filename step2.py \
+  --python_filename step2_pr.py \
   --inputCommands='keep *, drop *_hlt*_*_HLT, drop triggerTriggerFilterObjectWithRefs_l1t*_*_HLT' \
   --mc -n 100 --nThreads $N_STREAMS \
   $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
-  $PROCMODIFIERS_STR \
+  $PROCMODIFIERS_PR_STR \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
-  lineno=$(grep -n '^# Input source$' step2.py | head -n1 | cut -d: -f1)
+  lineno=$(grep -n '^# Input source$' step2_pr.py | head -n1 | cut -d: -f1)
   lineno=$((lineno - 1))
-  sed -i "${lineno}r ../../lowpt_mod.py" step2.py
+  sed -i "${lineno}r ../../lowpt_mod.py" step2_pr.py
 fi
-cmsRun step2.py
+cmsRun step2_pr.py
 cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   --hltProcess HLTX \
   --conditions auto:phase2_realistic_T35 \
@@ -113,17 +113,17 @@ cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   --datatier DQMIO \
   --filein file:step2_out.root \
   --fileout step3_out.root \
-  --python_filename step3.py \
+  --python_filename step3_pr.py \
   -n 100 --nThreads $N_STREAMS \
   $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
-  $PROCMODIFIERS_STR \
+  $PROCMODIFIERS_PR_STR \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
-  lineno=$(grep -n '^# Input source$' step3.py | head -n1 | cut -d: -f1)
+  lineno=$(grep -n '^# Input source$' step3_pr.py | head -n1 | cut -d: -f1)
   lineno=$((lineno - 1))
-  sed -i "${lineno}r ../../lowpt_mod.py" step3.py
+  sed -i "${lineno}r ../../lowpt_mod.py" step3_pr.py
 fi
-cmsRun step3.py
+cmsRun step3_pr.py
 rm step2_out.root
 cmsDriver.py HARVEST -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM+postProcessorHLTtrackingSequence \
   --conditions auto:phase2_realistic_T35 \
@@ -152,8 +152,52 @@ eval `scramv1 runtime -sh`
 scram b distclean
 scram b -r -j $MAXMAKETHREADS
 echo "Running HLT workflow..."
-cmsRun step2.py
-cmsRun step3.py
+if [[ -n "$PROCMODIFIERS_TARGET" ]]; then
+  PROCMODIFIERS_TARGET_STR="--procModifiers $PROCMODIFIERS_TARGET"
+else
+  PROCMODIFIERS_TARGET_STR=""
+fi
+cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
+  --processName=HLTX \
+  --conditions auto:phase2_realistic_T35 \
+  --geometry ExtendedRun4D110 \
+  --era Phase2C17I13M9 \
+  --eventcontent FEVTDEBUGHLT \
+  --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
+  --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
+  --fileout file:step2_out.root \
+  --python_filename step2_target.py \
+  --inputCommands='keep *, drop *_hlt*_*_HLT, drop triggerTriggerFilterObjectWithRefs_l1t*_*_HLT' \
+  --mc -n 100 --nThreads $N_STREAMS \
+  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
+  $PROCMODIFIERS_TARGET_STR \
+  --no_exec
+if [[ "$LOW_PT" == "true" ]]; then
+  lineno=$(grep -n '^# Input source$' step2_target.py | head -n1 | cut -d: -f1)
+  lineno=$((lineno - 1))
+  sed -i "${lineno}r ../../lowpt_mod.py" step2_target.py
+fi
+cmsRun step2_target.py
+cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
+  --hltProcess HLTX \
+  --conditions auto:phase2_realistic_T35 \
+  --geometry ExtendedRun4D110 \
+  --era Phase2C17I13M9 \
+  --eventcontent DQM \
+  --datatier DQMIO \
+  --filein file:step2_out.root \
+  --fileout step3_out.root \
+  --python_filename step3_target.py \
+  -n 100 --nThreads $N_STREAMS \
+  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
+  $PROCMODIFIERS_TARGET_STR \
+  --no_exec
+if [[ "$LOW_PT" == "true" ]]; then
+  lineno=$(grep -n '^# Input source$' step3_target.py | head -n1 | cut -d: -f1)
+  lineno=$((lineno - 1))
+  sed -i "${lineno}r ../../lowpt_mod.py" step3_target.py
+fi
+cmsRun step3_target.py
 rm step2_out.root
 cmsRun step4.py
 rm step3_out.root

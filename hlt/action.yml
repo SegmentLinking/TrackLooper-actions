@@ -19,8 +19,11 @@ inputs:
   packages:
     description: Comma-separated list of extra packages to add
     required: false
-  procmodifiers:
-    description: Comma-separated list of process modifiers
+  procmodifiers-pr:
+    description: Comma-separated list of process modifiers for PR branch
+    required: false
+  procmodifiers-target:
+    description: Comma-separated list of process modifiers for target branch
     required: false
 outputs:
   archive-repo:
@@ -127,7 +130,8 @@ runs:
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
           -e RELEASE=${{ inputs.release }} \
           -e PACKAGES=${{ inputs.packages }} \
-          -e PROCMODIFIERS=${{ inputs.procmodifiers }} \
+          -e PROCMODIFIERS_PR=${{ inputs.procmodifiers-pr }} \
+          -e PROCMODIFIERS_TARGET=${{ inputs.procmodifiers-target }} \
           ariostas/el8:hlt ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
@@ -142,4 +146,5 @@ runs:
         REQUIRED_PRS: ${{ inputs.required-prs }}
         RELEASE: ${{ inputs.release }}
         PACKAGES: ${{ inputs.packages }}
-        PROCMODIFIERS: ${{ inputs.procmodifiers }}
+        PROCMODIFIERS_PR: ${{ inputs.procmodifiers-pr }}
+        PROCMODIFIERS_TARGET: ${{ inputs.procmodifiers-target }}
