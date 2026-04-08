@@ -78,7 +78,7 @@ jobs:
       - name: Build and run PR
         timeout-minutes: 240
         id: build-and-run
-        uses: SegmentLinking/TrackLooper-actions/hlt@devel
+        uses: SegmentLinking/TrackLooper-actions/hlt@main
         with:
           pr-number: ${{ inputs.pr-number }}
           required-prs: ${{ inputs.required-prs }}
