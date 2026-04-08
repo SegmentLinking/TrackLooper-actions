@@ -1,0 +1,219 @@
+#!/bin/env bash
+
+# override the default scram arch
+export SCRAM_ARCH=el8_amd64_gcc13
+
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+else
+  CMSSW_VERSION=$RELEASE
+fi
+
+# Print all commands and exit on error
+set -e -v
+
+echo "Initializing CMSSW..."
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+scramv1 project CMSSW $CMSSW_VERSION
+cd $CMSSW_VERSION/src
+eval `scramv1 runtime -sh`
+git cms-init --upstream-only
+git remote add SegLink https://github.com/SegmentLinking/cmssw.git
+git fetch SegLink
+if [[ -n "$TARGET_BRANCH" ]]; then
+  git fetch SegLink refs/pull/${PR_NUMBER}/head:pr_branch
+else
+  git fetch SegLink master:pr_branch
+fi
+
+# Set up github config to avoid issues
+git config user.email "gha@example.com" && git config user.name "GHA"
+
+# Merge target branch into master in case they are different
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  git checkout SegLink/master
+fi
+git switch -c reference_branch
+# Merge reference branch into master/release in case they are different
+if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
+  git merge SegLink/$TARGET_BRANCH || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
+fi
+# Merge required PRs
+CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
+IFS=',' read -ra PRS <<< "$CLEAN_LIST"
+for pr in "${PRS[@]}"; do
+  echo "Merging required PR${pr}"
+  git fetch SegLink refs/pull/${pr}/head:pr-${pr}
+  git merge pr-${pr} --allow-unrelated-histories -m "Merge PR${pr}"
+done
+
+# Go back to PR branch
+git checkout pr_branch
+PRSHA=$(git rev-parse HEAD)
+git cms-addpkg RecoTracker/LST RecoTracker/LSTCore
+# Add extra packages
+CLEAN_LIST=$(echo "${PACKAGES}" | tr -d '[:space:]')
+IFS=',' read -ra PKGS <<< "$CLEAN_LIST"
+for pkg in "${PKGS[@]}"; do
+  echo "Adding extra package ${pkg}"
+  git cms-addpkg $pkg
+done
+# Add packages that changed in the PR
+PKGS=$(git diff --name-only reference_branch...pr_branch | awk -F/ 'NF>=2 {print $1"/"$2} NF<2 {print "."}' | sort -u)
+for pkg in $PKGS; do
+  echo "Adding changed package ${pkg}"
+  git cms-addpkg $pkg
+done
+# Temporarily merge target branch
+git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git cms-checkdeps -D
+eval `scramv1 runtime -sh`
+echo "Building CMSSW..."
+MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "4")
+scram b -r -j $MAXMAKETHREADS
+echo "Setting up siteconf..."
+git clone https://github.com/cms-sw/siteconf.git
+sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.gov:3128"\/>/d' siteconf/local/JobConfig/site-local-config.xml
+export SITECONFIG_PATH=$PWD/siteconf/local
+echo "Running HLT workflow..."
+N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
+if [[ -n "$PROCMODIFIERS_PR" ]]; then
+  PROCMODIFIERS_PR_STR="--procModifiers $PROCMODIFIERS_PR"
+else
+  PROCMODIFIERS_PR_STR=""
+fi
+cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
+  --processName=HLTX \
+  --conditions auto:phase2_realistic_T35 \
+  --geometry ExtendedRun4D110 \
+  --era Phase2C17I13M9 \
+  --eventcontent FEVTDEBUGHLT \
+  --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
+  --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
+  --fileout file:step2_out.root \
+  --python_filename step2_pr.py \
+  --inputCommands='keep *, drop *_hlt*_*_HLT, drop triggerTriggerFilterObjectWithRefs_l1t*_*_HLT' \
+  --mc -n 100 --nThreads $N_STREAMS \
+  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
+  $PROCMODIFIERS_PR_STR \
+  --no_exec
+if [[ "$LOW_PT" == "true" ]]; then
+  lineno=$(grep -n '^# Input source$' step2_pr.py | head -n1 | cut -d: -f1)
+  lineno=$((lineno - 1))
+  sed -i "${lineno}r ../../lowpt_mod.py" step2_pr.py
+fi
+cmsRun step2_pr.py
+cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
+  --hltProcess HLTX \
+  --conditions auto:phase2_realistic_T35 \
+  --geometry ExtendedRun4D110 \
+  --era Phase2C17I13M9 \
+  --eventcontent DQM \
+  --datatier DQMIO \
+  --filein file:step2_out.root \
+  --fileout step3_out.root \
+  --python_filename step3_pr.py \
+  -n 100 --nThreads $N_STREAMS \
+  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
+  $PROCMODIFIERS_PR_STR \
+  --no_exec
+if [[ "$LOW_PT" == "true" ]]; then
+  lineno=$(grep -n '^# Input source$' step3_pr.py | head -n1 | cut -d: -f1)
+  lineno=$((lineno - 1))
+  sed -i "${lineno}r ../../lowpt_mod.py" step3_pr.py
+fi
+cmsRun step3_pr.py
+rm step2_out.root
+cmsDriver.py HARVEST -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM+postProcessorHLTtrackingSequence \
+  --conditions auto:phase2_realistic_T35 \
+  --filein file:step3_out.root \
+  --python_filename step4.py \
+  --scenario pp \
+  --filetype DQM \
+  --mc -n 100 \
+  --no_exec
+cmsRun step4.py
+rm step3_out.root
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root this_PR.root
+
+# Exit early if we're just testing master
+if [[ -z "$TARGET_BRANCH" ]]; then
+  exit 0
+fi
+
+# Checkout the target branch so we can compare what has changed
+git checkout reference_branch
+git cms-checkdeps -D
+
+# Build and run target
+eval `scramv1 runtime -sh`
+# Recompile CMSSW in case anything changed in the headers
+scram b distclean
+scram b -r -j $MAXMAKETHREADS
+echo "Running HLT workflow..."
+if [[ -n "$PROCMODIFIERS_TARGET" ]]; then
+  PROCMODIFIERS_TARGET_STR="--procModifiers $PROCMODIFIERS_TARGET"
+else
+  PROCMODIFIERS_TARGET_STR=""
+fi
+cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
+  --processName=HLTX \
+  --conditions auto:phase2_realistic_T35 \
+  --geometry ExtendedRun4D110 \
+  --era Phase2C17I13M9 \
+  --eventcontent FEVTDEBUGHLT \
+  --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
+  --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
+  --fileout file:step2_out.root \
+  --python_filename step2_target.py \
+  --inputCommands='keep *, drop *_hlt*_*_HLT, drop triggerTriggerFilterObjectWithRefs_l1t*_*_HLT' \
+  --mc -n 100 --nThreads $N_STREAMS \
+  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
+  $PROCMODIFIERS_TARGET_STR \
+  --no_exec
+if [[ "$LOW_PT" == "true" ]]; then
+  lineno=$(grep -n '^# Input source$' step2_target.py | head -n1 | cut -d: -f1)
+  lineno=$((lineno - 1))
+  sed -i "${lineno}r ../../lowpt_mod.py" step2_target.py
+fi
+cmsRun step2_target.py
+cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
+  --hltProcess HLTX \
+  --conditions auto:phase2_realistic_T35 \
+  --geometry ExtendedRun4D110 \
+  --era Phase2C17I13M9 \
+  --eventcontent DQM \
+  --datatier DQMIO \
+  --filein file:step2_out.root \
+  --fileout step3_out.root \
+  --python_filename step3_target.py \
+  -n 100 --nThreads $N_STREAMS \
+  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
+  $PROCMODIFIERS_TARGET_STR \
+  --no_exec
+if [[ "$LOW_PT" == "true" ]]; then
+  lineno=$(grep -n '^# Input source$' step3_target.py | head -n1 | cut -d: -f1)
+  lineno=$((lineno - 1))
+  sed -i "${lineno}r ../../lowpt_mod.py" step3_target.py
+fi
+cmsRun step3_target.py
+rm step2_out.root
+cmsRun step4.py
+rm step3_out.root
+mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root target_branch.root
+# Go back to the PR commit so that the git tag is consistent everywhere
+git checkout $PRSHA
+
+# Create comparison plots
+makeTrackValidationPlots.py --extended -o plots_pdf target_branch.root this_PR.root
+makeTrackValidationPlots.py --extended --png -o plots_png target_branch.root this_PR.root
+
+# Copy a few plots that will be attached in the PR comment
+mkdir ../../$ARCHIVE_DIR
+cp plots_png/plots_hlt_hltGeneral/effandfakePtEtaPhi.png ../../$ARCHIVE_DIR
+
+mkdir plots
+cp -r plots_pdf/plots_hlt_hltGeneral plots
+rm -r plots/plots_hlt_hltGeneral/*/
+tar zcf ../../$ARCHIVE_DIR/plots.tar.gz plots

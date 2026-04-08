@@ -1,0 +1,150 @@
+name: HLT Testing
+description: Builds and tests the HLT functionality
+inputs:
+  pr-number:
+    description: PR number (if 0, use master and skip comparisons)
+    required: true
+  required-prs:
+    description: Comma-separated list of required PR numbers that must be merged before checks are run
+    required: false
+  runs-on:
+    description: Runner where to run the workflow
+    required: false
+  low-pt:
+    description: Run the low pT setup
+    required: false
+  release:
+    description: CMSSW release to use
+    required: false
+  packages:
+    description: Comma-separated list of extra packages to add
+    required: false
+  procmodifiers-pr:
+    description: Comma-separated list of process modifiers for PR branch
+    required: false
+  procmodifiers-target:
+    description: Comma-separated list of process modifiers for target branch
+    required: false
+outputs:
+  archive-repo:
+    description: The repository where the plots will be stored
+    value: ${{ steps.output-vars.outputs.archive-repo }}
+  archive-branch:
+    description: The branch of the repository where the plots will be stored
+    value: ${{ steps.output-vars.outputs.archive-branch }}
+  archive-dir:
+    description: The directory containing the data that will be stored
+    value: ${{ steps.output-vars.outputs.archive-dir }}
+  comment:
+    description: The comment that to leave in the PR if the test passes
+    value: ${{ steps.output-vars.outputs.comment }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Copy script to workspace
+      run: |
+        cp ${{ github.action_path }}/run.sh ${{ github.workspace }}
+        cp ${{ github.action_path }}/lowpt_mod.py ${{ github.workspace }}
+      shell: bash
+    - name: Set output variables
+      id: output-vars
+      shell: bash
+      run: |
+        CPU_OR_GPU="$( [[ ${{ inputs.runs-on }} == 'self-hosted' ]] && echo 'GPU' || echo 'CPU' )"
+        LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
+        ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
+        echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
+        ARCHIVE_BRANCH=main
+        echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_hlt${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
+        echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
+        COMMENT=$(cat <<EOF
+        The PR was built and ran successfully with HLT setup${LOW_PT} running on ${CPU_OR_GPU} (procModifiers = ${{ inputs.procmodifiers }}). Here are some plots.
+        <table>
+          <tr>
+            HLT General Plots
+            <td><img src="https://raw.githubusercontent.com/$ARCHIVE_REPO/$ARCHIVE_BRANCH/$ARCHIVE_DIR/effandfakePtEtaPhi.png" alt="Efficiency and fake rate vs pT, eta, and phi"></td>
+          </tr>
+        </table>
+
+        The full set of validation and comparison plots can be found [here](https://github.com/$ARCHIVE_REPO/tree/$ARCHIVE_BRANCH/$ARCHIVE_DIR).
+        EOF
+        )
+        {
+          echo "comment<<EOF"
+          echo "$COMMENT"
+          echo EOF
+        } >> $GITHUB_OUTPUT
+        echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
+        echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
+    - name: Mount cvmfs
+      if: inputs.runs-on != 'self-hosted'
+      uses: cvmfs-contrib/github-action-cvmfs@v5
+      with:
+        cvmfs_repositories: "cms.cern.ch,cms-ib.cern.ch"
+    # For some reason we need to interact with cvmfs before using it in Docker because otherwise it fails
+    - name: List files in cvmfs to get it started
+      run: |
+        ls /cvmfs/cms.cern.ch/ > /dev/null
+        ls /cvmfs/cms-ib.cern.ch/ > /dev/null
+      shell: bash
+    - name: Remove some pre-installed software
+      if: inputs.runs-on != 'self-hosted'
+      shell: bash
+      run: |
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /usr/local/lib/android
+        sudo rm -rf /opt/ghc
+        sudo rm -rf /opt/hostedtoolcache/CodeQL
+        sudo rm -rf /usr/local/share/boost
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+    - name: Get PR target branch
+      if: inputs.pr-number != '0'
+      id: get_target_branch
+      uses: actions/github-script@v8
+      with:
+        result-encoding: string
+        script: |
+          const { data: pullRequest } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: "cmssw",
+            pull_number: "${{ inputs.pr-number }}",
+          });
+          return pullRequest.base.ref;
+    - name: Build and run in Docker container
+      if: inputs.runs-on != 'self-hosted'
+      shell: bash
+      run: |
+        docker pull ariostas/el8:cmssw
+        docker run --rm \
+          -v ${{ github.workspace }}:/home/TrackLooper \
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
+          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
+          -w /home/TrackLooper \
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
+          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }} \
+          -e PR_NUMBER=${{ inputs.pr-number }} \
+          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }} \
+          -e LOW_PT=${{ inputs.low-pt }} \
+          -e RUNS_ON=${{ inputs.runs-on }} \
+          -e REQUIRED_PRS=${{ inputs.required-prs }} \
+          -e RELEASE=${{ inputs.release }} \
+          -e PACKAGES=${{ inputs.packages }} \
+          -e PROCMODIFIERS_PR=${{ inputs.procmodifiers-pr }} \
+          -e PROCMODIFIERS_TARGET=${{ inputs.procmodifiers-target }} \
+          ariostas/el8:hlt ./run.sh
+    - name: Build and run
+      if: inputs.runs-on == 'self-hosted'
+      shell: bash
+      run: ./run.sh
+      env:
+        ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
+        PR_NUMBER: ${{ inputs.pr-number }}
+        TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
+        LOW_PT: ${{ inputs.low-pt }}
+        RUNS_ON: ${{ inputs.runs-on }}
+        REQUIRED_PRS: ${{ inputs.required-prs }}
+        RELEASE: ${{ inputs.release }}
+        PACKAGES: ${{ inputs.packages }}
+        PROCMODIFIERS_PR: ${{ inputs.procmodifiers-pr }}
+        PROCMODIFIERS_TARGET: ${{ inputs.procmodifiers-target }}
