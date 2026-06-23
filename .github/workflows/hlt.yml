@@ -51,7 +51,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout PR
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           ref: ${{ inputs.pr-number != '0' && format('refs/pull/{0}/head', inputs.pr-number) || 'master' }}
       - name: Get commit SHA
