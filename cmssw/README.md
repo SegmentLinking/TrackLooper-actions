@@ -1,6 +1,6 @@
 # TrackLooper CMSSW Testing Action
 
-The action in this directory tests the cmssw integration of [LST](https://github.com/SegmentLinking/cmssw/tree/master/RecoTracker/LSTCore/standalone). This action builds the code from a Pull Request (PR), and runs steps 3 and 4 of the 29834.1 workflow. The `action.yml` file contains the needed configuration and setup, and the `run.sh` file contains the testing script.
+The action in this directory tests the cmssw integration of [LST](https://github.com/SegmentLinking/cmssw/tree/master/RecoTracker/LSTCore/standalone). This action builds the code from a Pull Request (PR), and runs steps 3 and 4 of the 34634.712 workflow. The `action.yml` file contains the needed configuration and setup, and the `run.sh` file contains the testing script.
 
 ## Inputs
 

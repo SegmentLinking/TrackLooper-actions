@@ -76,7 +76,7 @@ echo "Setting up siteconf..."
 git clone https://github.com/cms-sw/siteconf.git
 sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.gov:3128"\/>/d' siteconf/local/JobConfig/site-local-config.xml
 export SITECONFIG_PATH=$PWD/siteconf/local
-echo "Running 29834.1 (+LST) workflow..."
+echo "Running 34634.712 (+LST) workflow..."
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
 cmsDriver.py step3 \
   -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
@@ -89,7 +89,7 @@ cmsDriver.py step3 \
   --procModifiers trackingIters01,trackingLST \
   $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
   --nThreads $N_STREAMS \
-  --filein file:/data2/segmentlinking/step2_29834.1_100Events.root \
+  --filein file:/data2/segmentlinking/step2_34634.712_100Events.root \
   --fileout file:step3_out.root \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then
@@ -128,7 +128,7 @@ eval `scramv1 runtime -sh`
 # Recompile CMSSW in case anything changed in the headers
 scram b distclean
 scram b -r -j $MAXMAKETHREADS
-echo "Running 29834.1 (+LST) workflow..."
+echo "Running 34634.712 (+LST) workflow..."
 cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
 cmsRun step4_HARVESTING.py
 mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root target_branch.root
