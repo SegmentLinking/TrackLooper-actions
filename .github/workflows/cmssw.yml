@@ -39,7 +39,7 @@ on:
 
 jobs:
   test:
-    name: Run CMSSW workflow 29834.1 for ${{ inputs.pr-number != '0' && format('PR{0}', inputs.pr-number) || 'master' }}
+    name: Run CMSSW workflow 34634.712 for ${{ inputs.pr-number != '0' && format('PR{0}', inputs.pr-number) || 'master' }}
     runs-on: ${{ inputs.runs-on }}
     steps:
       - name: Checkout PR
@@ -62,7 +62,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
-          name: Run CMSSW 29834.1${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          name: Run CMSSW 34634.712${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
           status: in_progress
           details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           output: |
@@ -122,7 +122,7 @@ jobs:
         with:
           token: ${{ steps.app-token-end.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
-          name: Run CMSSW 29834.1${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          name: Run CMSSW 34634.712${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
           conclusion: ${{ job.status }}
           details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           output: |
