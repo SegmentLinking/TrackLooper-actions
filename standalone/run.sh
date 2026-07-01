@@ -78,6 +78,8 @@ LST_BIN=$([[ $RUNS_ON == "self-hosted" ]] && echo "lst_cuda" || echo "lst_cpu")
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
 lst_make_tracklooper -mAs
 echo "Running LST..."
+# Check out the real PR commit so that the git hash is correct
+git checkout $PR_HEAD_SHA
 $LST_BIN -i PU200 -o LSTNtuple_after.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_PR.txt
 # Exit early if we're just testing master
 if [[ -z "$TARGET_BRANCH" ]]; then
@@ -85,7 +87,6 @@ if [[ -z "$TARGET_BRANCH" ]]; then
 fi
 createPerfNumDenHists -i LSTNtuple_after.root -o LSTNumDen_after.root
 echo "Creating validation plots..."
-git checkout $PR_HEAD_SHA
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
 if [[ $RUNS_ON == "self-hosted" ]]; then
   echo "Running timing test"
@@ -102,10 +103,10 @@ echo "Building and LST..."
 # Only CPU version is compiled since the target branch has already been tested
 lst_make_tracklooper $([[ $RUNS_ON == "self-hosted" ]] && echo "-mAs" || echo "-mCs")
 echo "Running LST..."
+# Check out the real target branch commit so that the git hash is correct
+git checkout $TARGET_SHA
 $LST_BIN -i PU200 -o LSTNtuple_before.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_target.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
-# Temporarily check out the real target branch commit so that the comparison script uses the correct git hash
-git checkout $TARGET_SHA
 echo "Creating comparison plots..."
 python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels this_PR,target_branch -t "comparison_plots"
 if [[ $RUNS_ON == "self-hosted" ]]; then
