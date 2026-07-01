@@ -56,7 +56,7 @@ runs:
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_hlt${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_hlt${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
         The PR was built and ran successfully with HLT setup${LOW_PT} running on ${CPU_OR_GPU} (procModifiers = ${{ inputs.procmodifiers }}). Here are some plots.
