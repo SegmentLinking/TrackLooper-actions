@@ -18,6 +18,7 @@ git config user.email "gha@example.com" && git config user.name "GHA"
 
 # Save current branch
 git checkout -b pr_branch
+PR_HEAD_SHA=$(git rev-parse HEAD)
 git fetch --unshallow || echo "" # It might be worth switching actions/checkout to use depth 0 later on
 
 # Merge reference branch into master/release in case they are different
@@ -30,6 +31,7 @@ else
 fi
 git switch -c reference_branch
 if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
+  TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
   git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs
@@ -76,6 +78,8 @@ LST_BIN=$([[ $RUNS_ON == "self-hosted" ]] && echo "lst_cuda" || echo "lst_cpu")
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
 lst_make_tracklooper -mAs
 echo "Running LST..."
+# Check out the real PR commit so that the git hash is correct
+git checkout $PR_HEAD_SHA
 $LST_BIN -i PU200 -o LSTNtuple_after.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_PR.txt
 # Exit early if we're just testing master
 if [[ -z "$TARGET_BRANCH" ]]; then
@@ -90,8 +94,6 @@ if [[ $RUNS_ON == "self-hosted" ]]; then
 fi
 
 # Checkout the target branch so we can compare what has changed
-git stash
-PRSHA=$(git rev-parse HEAD)
 git checkout reference_branch
 
 # Build and run target. Create comparison plots
@@ -101,10 +103,10 @@ echo "Building and LST..."
 # Only CPU version is compiled since the target branch has already been tested
 lst_make_tracklooper $([[ $RUNS_ON == "self-hosted" ]] && echo "-mAs" || echo "-mCs")
 echo "Running LST..."
+# Check out the real target branch commit so that the git hash is correct
+git checkout $TARGET_SHA
 $LST_BIN -i PU200 -o LSTNtuple_before.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_target.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
-# Go back to the PR commit so that the git tag is consistent everywhere
-git checkout $PRSHA
 echo "Creating comparison plots..."
 python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels this_PR,target_branch -t "comparison_plots"
 if [[ $RUNS_ON == "self-hosted" ]]; then

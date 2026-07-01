@@ -53,11 +53,12 @@ runs:
       id: output-vars
       shell: bash
       run: |
+        CPU_OR_GPU="$( [[ ${{ inputs.runs-on }} == 'self-hosted' ]] && echo 'GPU' || echo 'CPU' )"
         ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV

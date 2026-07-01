@@ -50,7 +50,7 @@ runs:
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_cmssw${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_cmssw${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
         The PR was built and ran successfully with CMSSW${LOW_PT} running on ${CPU_OR_GPU}. Here are some plots.
