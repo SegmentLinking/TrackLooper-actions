@@ -61,7 +61,7 @@ runs:
           </tr>
         </table>
 
-        The full set of validation and comparison plots can be found [here](https://github.com/$ARCHIVE_REPO/tree/$ARCHIVE_BRANCH/$ARCHIVE_DIR).
+        The full set of validation and comparison plots can be found [here](https://segmentlinking.github.io/LSTPerformanceWeb/?run=$ARCHIVE_DIR).
         EOF
         )
         {
