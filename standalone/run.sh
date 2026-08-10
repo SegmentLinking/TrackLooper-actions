@@ -72,7 +72,7 @@ cd standalone
 echo "Running setup script..."
 source setup.sh
 echo "Building and LST..."
-export MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "4")
+export MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "3")
 LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
 LST_BIN=$([[ $RUNS_ON == "self-hosted" ]] && echo "lst_cuda" || echo "lst_cpu")
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
