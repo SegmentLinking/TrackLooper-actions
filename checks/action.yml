@@ -46,7 +46,7 @@ runs:
     - name: Run checks in Docker container
       shell: bash
       run: |
-        docker pull cmssw/el8:x86_64
+        docker pull cmssw/el9:x86_64
         docker run --rm \
           -v ${{ github.workspace }}:/home/TrackLooper \
           -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
@@ -57,4 +57,4 @@ runs:
           -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }} \
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
           -e PACKAGES=${{ inputs.packages }} \
-          cmssw/el8:x86_64 ./run.sh
+          cmssw/el9:x86_64 ./run.sh

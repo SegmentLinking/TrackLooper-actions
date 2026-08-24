@@ -115,7 +115,7 @@ runs:
       if: inputs.runs-on != 'self-hosted'
       shell: bash
       run: |
-        docker pull ariostas/el8:cmssw
+        docker pull ariostas/el9:cmssw
         docker run --rm \
           -v ${{ github.workspace }}:/home/TrackLooper \
           -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
@@ -132,7 +132,7 @@ runs:
           -e PACKAGES=${{ inputs.packages }} \
           -e PROCMODIFIERS_PR=${{ inputs.procmodifiers-pr }} \
           -e PROCMODIFIERS_TARGET=${{ inputs.procmodifiers-target }} \
-          ariostas/el8:hlt ./run.sh
+          ariostas/el9:hlt ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash

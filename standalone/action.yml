@@ -79,7 +79,7 @@ runs:
       if: inputs.runs-on != 'self-hosted'
       shell: bash
       run: |
-        docker pull ariostas/el8:standalone
+        docker pull ariostas/el9:standalone
         docker run --rm \
           -v ${{ github.workspace }}:/home/TrackLooper \
           -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
@@ -93,7 +93,7 @@ runs:
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
           -e RELEASE=${{ inputs.release }} \
           -e PACKAGES=${{ inputs.packages }} \
-          ariostas/el8:standalone ./run.sh
+          ariostas/el9:standalone ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash
