@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 # override the default scram arch
-export SCRAM_ARCH=el9_amd64_gcc13
+export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then

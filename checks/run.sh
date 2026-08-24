@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 # override the default scram arch
-export SCRAM_ARCH=el9_amd64_gcc13
+export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
