@@ -1,8 +1,6 @@
-process.load('RecoTracker.LSTCore.lstGeometryESProducer_cfi')
-process.load('RecoTracker.LST.lstModulesDevESProducer_cfi')
-process.load('RecoTracker.LST.lstInputProducer_cfi')
-process.load('RecoTracker.LST.lstProducer_cfi')
-process.lstGeometryESProducer.ptCut = 0.6
-process.lstModulesDevESProducer.ptCut = 0.6
-process.lstInputProducer.ptCut = 0.6
-process.lstProducer.ptCut = 0.6
+process.hltInputLST.ptCut = 0.6
+process.hltInitialStepTrackCandidates.candMinPtCut = 0.6
+process.hltInitialStepTrackCandidates.candMinPtRelaxedCut = 0.6
+process.hltLSTGeometry.ptCut = 0.6
+process.hltESPModulesDevLST.ptCut = cms.double(0.6)
+process.hltLST.ptCut = 0.6
