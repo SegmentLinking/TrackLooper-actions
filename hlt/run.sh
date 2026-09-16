@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 # override the default scram arch
-export SCRAM_ARCH=el8_amd64_gcc13
+export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
@@ -86,7 +86,7 @@ fi
 cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --processName=HLTX \
   --conditions auto:phase2_realistic_T35 \
-  --geometry ExtendedRun4D110 \
+  --geometry ExtendedRun4D121 \
   --era Phase2C17I13M9 \
   --eventcontent FEVTDEBUGHLT \
   --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
@@ -107,7 +107,7 @@ cmsRun step2_pr.py
 cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   --hltProcess HLTX \
   --conditions auto:phase2_realistic_T35 \
-  --geometry ExtendedRun4D110 \
+  --geometry ExtendedRun4D121 \
   --era Phase2C17I13M9 \
   --eventcontent DQM \
   --datatier DQMIO \
@@ -160,7 +160,7 @@ fi
 cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --processName=HLTX \
   --conditions auto:phase2_realistic_T35 \
-  --geometry ExtendedRun4D110 \
+  --geometry ExtendedRun4D121 \
   --era Phase2C17I13M9 \
   --eventcontent FEVTDEBUGHLT \
   --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
@@ -181,7 +181,7 @@ cmsRun step2_target.py
 cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   --hltProcess HLTX \
   --conditions auto:phase2_realistic_T35 \
-  --geometry ExtendedRun4D110 \
+  --geometry ExtendedRun4D121 \
   --era Phase2C17I13M9 \
   --eventcontent DQM \
   --datatier DQMIO \

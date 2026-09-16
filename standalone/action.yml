@@ -53,18 +53,19 @@ runs:
       id: output-vars
       shell: bash
       run: |
+        CPU_OR_GPU="$( [[ ${{ inputs.runs-on }} == 'self-hosted' ]] && echo 'GPU' || echo 'CPU' )"
         ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
     - name: Get PR target branch
       if: inputs.pr-number != '0'
       id: get_target_branch
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         result-encoding: string
         script: |
@@ -78,7 +79,7 @@ runs:
       if: inputs.runs-on != 'self-hosted'
       shell: bash
       run: |
-        docker pull ariostas/el8:standalone
+        docker pull ariostas/el9:standalone
         docker run --rm \
           -v ${{ github.workspace }}:/home/TrackLooper \
           -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
@@ -92,7 +93,7 @@ runs:
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
           -e RELEASE=${{ inputs.release }} \
           -e PACKAGES=${{ inputs.packages }} \
-          ariostas/el8:standalone ./run.sh
+          ariostas/el9:standalone ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash
@@ -132,7 +133,7 @@ runs:
           </tr>
         </table>
 
-        The full set of validation and comparison plots can be found [here](https://github.com/$ARCHIVE_REPO/tree/$ARCHIVE_BRANCH/$ARCHIVE_DIR).
+        The full set of validation and comparison plots can be found [here](https://segmentlinking.github.io/LSTPerformanceWeb/?run=$ARCHIVE_DIR).
 
         Here is a timing comparison:
         <pre><code>   Evt    Hits       MD       LS      T3       T5       pLS       pT5      pT3      TC       Reset    Event     Short             Rate

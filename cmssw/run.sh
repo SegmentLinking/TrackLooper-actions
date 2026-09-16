@@ -1,7 +1,7 @@
 #!/bin/env bash
 
 # override the default scram arch
-export SCRAM_ARCH=el8_amd64_gcc13
+export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
@@ -84,8 +84,8 @@ cmsDriver.py step3 \
   --datatier GEN-SIM-RECO,DQMIO \
   -n 100 \
   --eventcontent RECOSIM,DQM \
-  --geometry ExtendedRun4D110 \
-  --era Phase2C17I13M9 \
+  --geometry ExtendedRun4D121 \
+  --era Phase2C22I13M9 \
   --procModifiers trackingIters01,trackingLST \
   $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
   --nThreads $N_STREAMS \
@@ -102,10 +102,10 @@ cmsDriver.py step4 \
   -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM \
   --conditions auto:phase2_realistic_T35 \
   --mc \
-  --geometry ExtendedRun4D110 \
+  --geometry ExtendedRun4D121 \
   --scenario pp \
   --filetype DQM \
-  --era Phase2C17I13M9 \
+  --era Phase2C22I13M9 \
   -n 100 \
   --filein file:step3_out_inDQM.root \
   --fileout file:step4_out.root \

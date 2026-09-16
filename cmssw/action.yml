@@ -50,7 +50,7 @@ runs:
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_cmssw${{ inputs.low-pt == 'true' && '_lowpt' || '' }}
+        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_cmssw${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
         The PR was built and ran successfully with CMSSW${LOW_PT} running on ${CPU_OR_GPU}. Here are some plots.
@@ -61,7 +61,7 @@ runs:
           </tr>
         </table>
 
-        The full set of validation and comparison plots can be found [here](https://github.com/$ARCHIVE_REPO/tree/$ARCHIVE_BRANCH/$ARCHIVE_DIR).
+        The full set of validation and comparison plots can be found [here](https://segmentlinking.github.io/LSTPerformanceWeb/?run=$ARCHIVE_DIR).
         EOF
         )
         {
@@ -95,7 +95,7 @@ runs:
     - name: Get PR target branch
       if: inputs.pr-number != '0'
       id: get_target_branch
-      uses: actions/github-script@v8
+      uses: actions/github-script@v9
       with:
         result-encoding: string
         script: |
@@ -109,7 +109,7 @@ runs:
       if: inputs.runs-on != 'self-hosted'
       shell: bash
       run: |
-        docker pull ariostas/el8:cmssw
+        docker pull ariostas/el9:cmssw
         docker run --rm \
           -v ${{ github.workspace }}:/home/TrackLooper \
           -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
@@ -124,7 +124,7 @@ runs:
           -e REQUIRED_PRS=${{ inputs.required-prs }} \
           -e RELEASE=${{ inputs.release }} \
           -e PACKAGES=${{ inputs.packages }} \
-          ariostas/el8:cmssw ./run.sh
+          ariostas/el9:cmssw ./run.sh
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash

@@ -1,5 +1,5 @@
-FROM cmssw/el8:x86_64
+FROM cmssw/el9:x86_64
 
 ADD trackingNtuple_ttbar_PU200.root /data2/segmentlinking/CMSSW_12_2_0_pre2/
 
-CMD bash
+CMD ["bash"]
