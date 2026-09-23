@@ -118,11 +118,6 @@ cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
   $PROCMODIFIERS_PR_STR \
   --no_exec
-if [[ "$LOW_PT" == "true" ]]; then
-  lineno=$(grep -n '^# Input source$' step3_pr.py | head -n1 | cut -d: -f1)
-  lineno=$((lineno - 1))
-  sed -i "${lineno}r ../../lowpt_mod.py" step3_pr.py
-fi
 cmsRun step3_pr.py
 rm step2_out.root
 cmsDriver.py HARVEST -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM+postProcessorHLTtrackingSequence \
@@ -192,11 +187,6 @@ cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
   $PROCMODIFIERS_TARGET_STR \
   --no_exec
-if [[ "$LOW_PT" == "true" ]]; then
-  lineno=$(grep -n '^# Input source$' step3_target.py | head -n1 | cut -d: -f1)
-  lineno=$((lineno - 1))
-  sed -i "${lineno}r ../../lowpt_mod.py" step3_target.py
-fi
 cmsRun step3_target.py
 rm step2_out.root
 cmsRun step4.py
