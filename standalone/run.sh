@@ -5,7 +5,7 @@ export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
-  export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+  export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw(-patch)?/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
 else
   export FORCED_CMSSW_VERSION=$RELEASE
 fi
@@ -71,6 +71,11 @@ git clone --branch add_t33_maps https://github.com/SegmentLinking/RecoTracker-LS
 cd standalone
 echo "Running setup script..."
 source setup.sh
+# Patch releases only contain the packages that changed w.r.t. their base release, so the
+# headers of all other packages need to be taken from the full release
+if [[ -n "$CMSSW_FULL_RELEASE_BASE" ]]; then
+  export CMSSW_RELEASE_BASE=$CMSSW_FULL_RELEASE_BASE
+fi
 echo "Building and LST..."
 export MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "3")
 LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
@@ -99,6 +104,11 @@ git checkout reference_branch
 # Build and run target. Create comparison plots
 echo "Running setup script..."
 source setup.sh
+# Patch releases only contain the packages that changed w.r.t. their base release, so the
+# headers of all other packages need to be taken from the full release
+if [[ -n "$CMSSW_FULL_RELEASE_BASE" ]]; then
+  export CMSSW_RELEASE_BASE=$CMSSW_FULL_RELEASE_BASE
+fi
 echo "Building and LST..."
 # Only CPU version is compiled since the target branch has already been tested
 lst_make_tracklooper $([[ $RUNS_ON == "self-hosted" ]] && echo "-mAs" || echo "-mCs")
