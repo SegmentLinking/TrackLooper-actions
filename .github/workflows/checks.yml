@@ -27,6 +27,10 @@ jobs:
   checks:
     name: Run checks for PR${{ inputs.pr-number }}
     runs-on: ubuntu-latest
+    # One group per check, so re-running a check cancels the previous run of that same check
+    concurrency:
+      group: lst-checks-PR${{ inputs.pr-number }}
+      cancel-in-progress: true
     steps:
       - name: Check out PR
         uses: actions/checkout@v7

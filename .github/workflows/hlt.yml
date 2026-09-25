@@ -49,6 +49,10 @@ jobs:
   test:
     name: Run HLT workflow for ${{ inputs.pr-number != '0' && format('PR{0}', inputs.pr-number) || 'master' }}
     runs-on: ${{ inputs.runs-on }}
+    # One group per check, so re-running a check cancels the previous run of that same check
+    concurrency:
+      group: lst-hlt-PR${{ inputs.pr-number }}-${{ inputs.runs-on }}${{ inputs.low-pt == 'true' && '-lowpt' || '' }}
+      cancel-in-progress: true
     steps:
       - name: Checkout PR
         uses: actions/checkout@v7
