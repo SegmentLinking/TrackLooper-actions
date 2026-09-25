@@ -59,7 +59,7 @@ runs:
         ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_hlt${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
-        The PR was built and ran successfully with HLT setup${LOW_PT} running on ${CPU_OR_GPU} (procModifiers = ${{ inputs.procmodifiers }}). Here are some plots.
+        The PR was built and ran successfully with HLT setup${LOW_PT} running on ${CPU_OR_GPU} (procModifiers: PR = ${{ inputs.procmodifiers-pr || 'none' }}, target = ${{ inputs.procmodifiers-target || 'none' }}). Here are some plots.
         <table>
           <tr>
             HLT General Plots
