@@ -66,7 +66,7 @@ done
 
 # Download data files
 cd RecoTracker/LSTCore
-git clone --branch add_t33_maps https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
+git clone https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
 
 # Build and run the PR. Create validation plots
 cd standalone
