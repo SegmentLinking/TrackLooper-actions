@@ -30,6 +30,7 @@ else
   git checkout $RELEASE
 fi
 git switch -c reference_branch
+TARGET_SHA=$(git rev-parse HEAD)
 if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
   TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
   git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
