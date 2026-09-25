@@ -33,7 +33,7 @@ git switch -c reference_branch
 TARGET_SHA=$(git rev-parse HEAD)
 if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
   TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
-  git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
+  git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo -e "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
@@ -47,7 +47,7 @@ done
 # Go back to PR branch and merge reference
 git checkout pr_branch
 if [[ -n "$TARGET_BRANCH" ]]; then
-  git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
+  git merge reference_branch --allow-unrelated-histories || (echo -e "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
 fi
 
 # Add extra packages

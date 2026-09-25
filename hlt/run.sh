@@ -37,7 +37,7 @@ fi
 git switch -c reference_branch
 # Merge reference branch into master/release in case they are different
 if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
-  git merge SegLink/$TARGET_BRANCH || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
+  git merge SegLink/$TARGET_BRANCH || (echo -e "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
@@ -66,7 +66,7 @@ for pkg in $PKGS; do
   git cms-addpkg $pkg
 done
 # Temporarily merge target branch
-git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge reference_branch --allow-unrelated-histories || (echo -e "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-checkdeps -D
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."

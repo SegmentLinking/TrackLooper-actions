@@ -37,7 +37,7 @@ for pkg in $PKGS; do
 done
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo -e "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git commit -m "Temporary merge" || echo "Nothing to commit"
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
@@ -52,9 +52,9 @@ done
 eval `scramv1 runtime -sh`
 echo "Checking format"
 scram b code-format
-git diff --exit-code || (echo "***\nError: There are unformatted files. Please run 'scram b code-format'.\n***" && false)
+git diff --exit-code || (echo -e "***\nError: There are unformatted files. Please run 'scram b code-format'.\n***" && false)
 echo "Running checks"
 scram b -j 4 code-checks
-git diff --exit-code || (echo "***\nError: There are suggested changes. Please run 'scram b code-checks'.\n***" && false)
+git diff --exit-code || (echo -e "***\nError: There are suggested changes. Please run 'scram b code-checks'.\n***" && false)
 echo "Checking headers"
 scram b -j 4 check-headers
