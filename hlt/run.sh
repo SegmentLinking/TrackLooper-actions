@@ -87,7 +87,7 @@ cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --processName=HLTX \
   --conditions auto:phase2_realistic_T35 \
   --geometry ExtendedRun4D121 \
-  --era Phase2C17I13M9 \
+  --era Phase2C22I13M9 \
   --eventcontent FEVTDEBUGHLT \
   --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
   --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
@@ -108,7 +108,7 @@ cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   --hltProcess HLTX \
   --conditions auto:phase2_realistic_T35 \
   --geometry ExtendedRun4D121 \
-  --era Phase2C17I13M9 \
+  --era Phase2C22I13M9 \
   --eventcontent DQM \
   --datatier DQMIO \
   --filein file:step2_out.root \
@@ -156,7 +156,7 @@ cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --processName=HLTX \
   --conditions auto:phase2_realistic_T35 \
   --geometry ExtendedRun4D121 \
-  --era Phase2C17I13M9 \
+  --era Phase2C22I13M9 \
   --eventcontent FEVTDEBUGHLT \
   --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
   --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
@@ -177,7 +177,7 @@ cmsDriver.py DQM -s VALIDATION:hltMultiTrackValidation \
   --hltProcess HLTX \
   --conditions auto:phase2_realistic_T35 \
   --geometry ExtendedRun4D121 \
-  --era Phase2C17I13M9 \
+  --era Phase2C22I13M9 \
   --eventcontent DQM \
   --datatier DQMIO \
   --filein file:step2_out.root \
