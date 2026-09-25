@@ -10,6 +10,12 @@ else
   CMSSW_VERSION=$RELEASE
 fi
 
+if [[ "$SAMPLE" == "qcd" ]]; then
+  INPUT_FILE=/data2/segmentlinking/step2_qcd_50Events.root
+else
+  INPUT_FILE=/data2/segmentlinking/step1_hlt_100Events.root
+fi
+
 # Print all commands and exit on error
 set -e -v
 
@@ -90,7 +96,7 @@ cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --era Phase2C22I13M9 \
   --eventcontent FEVTDEBUGHLT \
   --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
-  --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
+  --filein file:$INPUT_FILE \
   --fileout file:step2_out.root \
   --python_filename step2_pr.py \
   --inputCommands='keep *, drop *_hlt*_*_HLT, drop triggerTriggerFilterObjectWithRefs_l1t*_*_HLT' \
@@ -159,7 +165,7 @@ cmsDriver.py Phase2 -s L1P2GT,HLT:75e33 \
   --era Phase2C22I13M9 \
   --eventcontent FEVTDEBUGHLT \
   --customise SLHCUpgradeSimulations/Configuration/aging.customise_aging_1000 \
-  --filein file:/data2/segmentlinking/step1_hlt_100Events.root \
+  --filein file:$INPUT_FILE \
   --fileout file:step2_out.root \
   --python_filename step2_target.py \
   --inputCommands='keep *, drop *_hlt*_*_HLT, drop triggerTriggerFilterObjectWithRefs_l1t*_*_HLT' \

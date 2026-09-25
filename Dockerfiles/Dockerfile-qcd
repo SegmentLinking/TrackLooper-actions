@@ -1,0 +1,5 @@
+FROM cmssw/el9:x86_64
+
+ADD step2_qcd_50Events.root /data2/segmentlinking/
+
+CMD ["bash"]

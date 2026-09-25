@@ -10,6 +10,12 @@ else
   CMSSW_VERSION=$RELEASE
 fi
 
+if [[ "$SAMPLE" == "qcd" ]]; then
+  INPUT_FILE=/data2/segmentlinking/step2_qcd_50Events.root
+else
+  INPUT_FILE=/data2/segmentlinking/step2_34634.712_100Events.root
+fi
+
 # Print all commands and exit on error
 set -e -v
 
@@ -89,7 +95,7 @@ cmsDriver.py step3 \
   --procModifiers trackingIters01,trackingLST \
   $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
   --nThreads $N_STREAMS \
-  --filein file:/data2/segmentlinking/step2_34634.712_100Events.root \
+  --filein file:$INPUT_FILE \
   --fileout file:step3_out.root \
   --no_exec
 if [[ "$LOW_PT" == "true" ]]; then

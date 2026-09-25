@@ -20,6 +20,10 @@ on:
         description: Run the low pT setup
         required: false
         type: string
+      sample:
+        description: Sample to run on (ttbar or qcd, defaults to ttbar)
+        required: false
+        type: string
       release:
         description: CMSSW release to use
         required: false
@@ -43,7 +47,7 @@ jobs:
     runs-on: ${{ inputs.runs-on }}
     # One group per check, so re-running a check cancels the previous run of that same check
     concurrency:
-      group: lst-cmssw-PR${{ inputs.pr-number }}-${{ inputs.runs-on }}${{ inputs.low-pt == 'true' && '-lowpt' || '' }}
+      group: lst-cmssw-PR${{ inputs.pr-number }}-${{ inputs.runs-on }}${{ inputs.sample == 'qcd' && '-qcd' || '' }}${{ inputs.low-pt == 'true' && '-lowpt' || '' }}
       cancel-in-progress: true
     steps:
       - name: Checkout PR
@@ -66,7 +70,7 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
-          name: Run CMSSW 34634.712${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          name: Run CMSSW 34634.712${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.sample == 'qcd' && ' (QCD)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
           status: in_progress
           details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           output: |
@@ -80,6 +84,7 @@ jobs:
           required-prs: ${{ inputs.required-prs }}
           runs-on: ${{ inputs.runs-on }}
           low-pt: ${{ inputs.low-pt }}
+          sample: ${{ inputs.sample }}
           release: ${{ inputs.release }}
           packages: ${{ inputs.packages }}
       - name: Upload plots to archival repo
@@ -127,7 +132,7 @@ jobs:
         with:
           token: ${{ steps.app-token-end.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
-          name: Run CMSSW 34634.712${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          name: Run CMSSW 34634.712${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.sample == 'qcd' && ' (QCD)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
           conclusion: ${{ job.status }}
           details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           output: |

@@ -13,6 +13,9 @@ inputs:
   low-pt:
     description: Run the low pT setup
     required: false
+  sample:
+    description: Sample to run on (ttbar or qcd, defaults to ttbar)
+    required: false
   release:
     description: CMSSW release to use
     required: false
@@ -52,14 +55,19 @@ runs:
       run: |
         CPU_OR_GPU=${{ inputs.runs-on == 'self-hosted' && 'GPU' || 'CPU' }}
         LOW_PT="${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}"
+        if [[ -n "$SAMPLE" && "$SAMPLE" != "ttbar" && "$SAMPLE" != "qcd" ]]; then
+          echo "Error: Invalid sample '$SAMPLE'. Must be 'ttbar' or 'qcd'."
+          exit 1
+        fi
+        SAMPLE_STR="${{ inputs.sample == 'qcd' && ' on the QCD sample' || '' }}"
         ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${PR_NUMBER}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_hlt${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
+        ARCHIVE_DIR=PR${PR_NUMBER}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_hlt${{ inputs.sample == 'qcd' && '_qcd' || '' }}${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
-        The PR was built and ran successfully with HLT setup${LOW_PT} running on ${CPU_OR_GPU} (procModifiers: PR = ${PROCMODIFIERS_PR:-none}, target = ${PROCMODIFIERS_TARGET:-none}). Here are some plots.
+        The PR was built and ran successfully with HLT setup${LOW_PT} running on ${CPU_OR_GPU}${SAMPLE_STR} (procModifiers: PR = ${PROCMODIFIERS_PR:-none}, target = ${PROCMODIFIERS_TARGET:-none}). Here are some plots.
         <table>
           <tr>
             HLT General Plots
@@ -79,6 +87,7 @@ runs:
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
       env:
         PR_NUMBER: ${{ inputs.pr-number }}
+        SAMPLE: ${{ inputs.sample }}
         PROCMODIFIERS_PR: ${{ inputs.procmodifiers-pr }}
         PROCMODIFIERS_TARGET: ${{ inputs.procmodifiers-target }}
     - name: Mount cvmfs
@@ -119,7 +128,7 @@ runs:
       if: inputs.runs-on != 'self-hosted'
       shell: bash
       run: |
-        docker pull ariostas/el9:hlt
+        docker pull ariostas/el9:${{ inputs.sample == 'qcd' && 'qcd' || 'hlt' }}
         docker run --rm \
           -v ${{ github.workspace }}:/home/TrackLooper \
           -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
@@ -130,16 +139,18 @@ runs:
           -e PR_NUMBER \
           -e TARGET_BRANCH \
           -e LOW_PT \
+          -e SAMPLE \
           -e RUNS_ON \
           -e REQUIRED_PRS \
           -e RELEASE \
           -e PACKAGES \
           -e PROCMODIFIERS_PR \
           -e PROCMODIFIERS_TARGET \
-          ariostas/el9:hlt ./run.sh
+          ariostas/el9:${{ inputs.sample == 'qcd' && 'qcd' || 'hlt' }} ./run.sh
       env:
         ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
         PR_NUMBER: ${{ inputs.pr-number }}
+        SAMPLE: ${{ inputs.sample }}
         TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
         LOW_PT: ${{ inputs.low-pt }}
         RUNS_ON: ${{ inputs.runs-on }}
@@ -155,6 +166,7 @@ runs:
       env:
         ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
         PR_NUMBER: ${{ inputs.pr-number }}
+        SAMPLE: ${{ inputs.sample }}
         TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
         LOW_PT: ${{ inputs.low-pt }}
         RUNS_ON: ${{ inputs.runs-on }}
