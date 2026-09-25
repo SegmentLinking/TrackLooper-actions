@@ -53,15 +53,17 @@ runs:
       id: output-vars
       shell: bash
       run: |
-        CPU_OR_GPU="$( [[ ${{ inputs.runs-on }} == 'self-hosted' ]] && echo 'GPU' || echo 'CPU' )"
+        CPU_OR_GPU=${{ inputs.runs-on == 'self-hosted' && 'GPU' || 'CPU' }}
         ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
         echo "archive-branch=$ARCHIVE_BRANCH" >> $GITHUB_OUTPUT
-        ARCHIVE_DIR=PR${{ inputs.pr-number }}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
+        ARCHIVE_DIR=PR${PR_NUMBER}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_standalone${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
         echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
+      env:
+        PR_NUMBER: ${{ inputs.pr-number }}
     - name: Get PR target branch
       if: inputs.pr-number != '0'
       id: get_target_branch
@@ -86,14 +88,22 @@ runs:
           -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
           -w /home/TrackLooper \
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
-          -e ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }} \
-          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }} \
-          -e LOW_PT=${{ inputs.low-pt }} \
-          -e RUNS_ON=${{ inputs.runs-on }} \
-          -e REQUIRED_PRS=${{ inputs.required-prs }} \
-          -e RELEASE=${{ inputs.release }} \
-          -e PACKAGES=${{ inputs.packages }} \
+          -e ARCHIVE_DIR \
+          -e TARGET_BRANCH \
+          -e LOW_PT \
+          -e RUNS_ON \
+          -e REQUIRED_PRS \
+          -e RELEASE \
+          -e PACKAGES \
           ariostas/el9:standalone ./run.sh
+      env:
+        ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
+        TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
+        LOW_PT: ${{ inputs.low-pt }}
+        RUNS_ON: ${{ inputs.runs-on }}
+        REQUIRED_PRS: ${{ inputs.required-prs }}
+        RELEASE: ${{ inputs.release }}
+        PACKAGES: ${{ inputs.packages }}
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash
@@ -110,11 +120,8 @@ runs:
       id: output-comment
       shell: bash
       run: |
-        CPU_OR_GPU="$( [[ ${{ inputs.runs-on }} == 'self-hosted' ]] && echo 'GPU' || echo 'CPU' )"
-        LOW_PT="$( [[ ${{ inputs.low-pt }} == 'true' ]] && echo ' (low pT setup)' || echo '' )"
-        ARCHIVE_REPO=${{ steps.output-vars.outputs.archive-repo }}
-        ARCHIVE_BRANCH=${{ steps.output-vars.outputs.archive-branch }}
-        ARCHIVE_DIR=${{ steps.output-vars.outputs.archive-dir }}
+        CPU_OR_GPU=${{ inputs.runs-on == 'self-hosted' && 'GPU' || 'CPU' }}
+        LOW_PT="${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}"
         COMMENT=$(cat <<EOF
         The PR was built and ran successfully in standalone mode${LOW_PT} running on ${CPU_OR_GPU}. Here are some of the comparison plots.
 
@@ -147,3 +154,7 @@ runs:
           echo "$COMMENT"
           echo EOF
         } >> $GITHUB_OUTPUT
+      env:
+        ARCHIVE_REPO: ${{ steps.output-vars.outputs.archive-repo }}
+        ARCHIVE_BRANCH: ${{ steps.output-vars.outputs.archive-branch }}
+        ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}

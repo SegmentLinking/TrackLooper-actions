@@ -53,8 +53,13 @@ runs:
           -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
           -w /home/TrackLooper \
           -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
-          -e PR_NUMBER=${{ inputs.pr-number }} \
-          -e TARGET_BRANCH=${{ steps.get_target_branch.outputs.result }} \
-          -e REQUIRED_PRS=${{ inputs.required-prs }} \
-          -e PACKAGES=${{ inputs.packages }} \
+          -e PR_NUMBER \
+          -e TARGET_BRANCH \
+          -e REQUIRED_PRS \
+          -e PACKAGES \
           cmssw/el9:x86_64 ./run.sh
+      env:
+        PR_NUMBER: ${{ inputs.pr-number }}
+        TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
+        REQUIRED_PRS: ${{ inputs.required-prs }}
+        PACKAGES: ${{ inputs.packages }}
