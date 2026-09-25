@@ -93,13 +93,15 @@ jobs:
       - name: Comment on PR
         if: inputs.pr-number != '0'
         uses: actions/github-script@v9
+        env:
+          COMMENT: ${{ steps.build-and-run.outputs.comment }}
         with:
           script: |
             github.rest.issues.createComment({
               issue_number: '${{ inputs.pr-number }}',
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `${{ steps.build-and-run.outputs.comment }}`
+              body: process.env.COMMENT
             })
       - name: Comment on PR if job failed.
         if: failure() && inputs.pr-number != '0'
