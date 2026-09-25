@@ -30,7 +30,7 @@ outputs:
     description: The directory containing the data that will be stored
     value: ${{ steps.output-vars.outputs.archive-dir }}
   comment:
-    description: The comment that to leave in the PR if the test passes
+    description: The comment that will be posted in the PR if the test passes
     value: ${{ steps.output-vars.outputs.comment }}
 runs:
   using: 'composite'
