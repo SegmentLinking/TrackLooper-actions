@@ -30,7 +30,7 @@ for pkg in "${PKGS[@]}"; do
   git cms-addpkg $pkg
 done
 # Add packages that changed in the PR
-PKGS=$(git diff --name-only reference_branch...pr_branch | awk -F/ 'NF>=2 {print $1"/"$2} NF<2 {print "."}' | sort -u)
+PKGS=$(git diff --name-only SegLink/${TARGET_BRANCH}...SegLink_cmssw | awk -F/ 'NF>=2 {print $1"/"$2} NF<2 {print "."}' | sort -u)
 for pkg in $PKGS; do
   echo "Adding changed package ${pkg}"
   git cms-addpkg $pkg
