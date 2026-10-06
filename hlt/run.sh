@@ -25,6 +25,7 @@ scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
+RELEASE_SHA=$(git rev-parse HEAD)
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink
 if [[ -n "$TARGET_BRANCH" ]]; then
@@ -41,6 +42,11 @@ if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
   git checkout SegLink/master
 fi
 git switch -c reference_branch
+# Bring master up to the IB in case it is behind it (it is only synced from upstream twice a day).
+# Otherwise the packages checked out below would be older than the rest of the release.
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  git merge $RELEASE_SHA || (echo -e "***\nError: There are conflicts between the IB and master that need to be resolved.\n***" && false)
+fi
 # Merge reference branch into master/release in case they are different
 if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
   git merge SegLink/$TARGET_BRANCH || (echo -e "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)

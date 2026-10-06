@@ -35,6 +35,8 @@ The reusable workflows in `.github/workflows/` wrap these actions and additional
 
 **Branch strategy**: Each script constructs two git branches — `reference_branch` (target branch + required PRs merged in) and `pr_branch` (the PR head). It runs the test on both, then generates comparison plots.
 
+**IB vs. master skew** (`cmssw` and `hlt`): The SCRAM area is an IB, but the packages that get checked out (LST, plus everything the PR touches) come from `SegLink/master`, which is only synced from upstream every 12 hours and can therefore be older than the IB. When upstream moves code between packages in that window, the checked-out packages and the IB disagree. For example, cms-sw/cmssw#52080 moved the Phase-2 `keep` statements of FEVTDEBUGHLT from `Configuration/EventContent` to `HLTrigger/Configuration`, so a PR touching `HLTrigger/Configuration` got neither copy and `hltGeneralTracks` was silently dropped from the output, leaving the validation plots empty. To avoid this, the IB commit is merged into `reference_branch` right after checking out master, so the reference is never older than the IB.
+
 **`pr-number: 0`**: Special case — uses `master` branch and skips comparison (no target branch, no PR comment).
 
 **`required-prs`**: Comma-separated PR numbers that are merged into the reference branch before testing. Used when a PR depends on another unmerged PR.
