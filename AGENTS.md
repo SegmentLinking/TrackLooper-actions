@@ -43,7 +43,7 @@ The reusable workflows in `.github/workflows/` wrap these actions and additional
 
 **`low-pt`**: When `true`, injects `lowpt_mod.py` into the generated cmsDriver config to set `ptCut = 0.6` on all LST modules.
 
-**`sample`** (`cmssw` and `hlt` only): `ttbar` (default when empty) or `qcd`. With `qcd`, the input file is `step2_qcd_50Events.root` and the Docker image is `ariostas/el9:qcd`; the archive dir, check name, and concurrency group get a `qcd` tag.
+**`sample`** (`standalone`, `cmssw`, and `hlt`): `ttbar` (default when empty) or `qcd`. With `qcd`, `cmssw` and `hlt` use `step2_qcd_50Events.root` from the `ariostas/el9:qcd` image, and `standalone` uses `trackingNtuple_qcd.root` from the `ariostas/el9:standalone-qcd` image. Standalone passes it to LST as `-i QCD` through a symlink, because the input name ends up in the plot directory names and must not contain slashes. The archive dir, check name, and concurrency group get a `qcd` tag.
 
 **`runs-on: self-hosted`** vs hosted: Self-hosted runners have GPUs and pre-mounted CVMFS + data files at `/data2/segmentlinking/`. Hosted runners use Docker with CVMFS mounted and use `--accelerators cpu`.
 
@@ -56,6 +56,7 @@ Built from `Dockerfiles/` directory. Each image pre-packages the necessary ROOT 
 - `ariostas/el9:cmssw` — includes `step2_34634.712_100Events.root`
 - `ariostas/el9:hlt` — includes `step1_hlt_100Events.root`
 - `ariostas/el9:qcd` — includes `step2_qcd_50Events.root`
+- `ariostas/el9:standalone-qcd` — includes `trackingNtuple_qcd.root`
 
 To rebuild and push an image after updating data files, see `Dockerfiles/README.md`.
 
