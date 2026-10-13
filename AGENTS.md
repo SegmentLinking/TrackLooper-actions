@@ -45,6 +45,8 @@ The reusable workflows in `.github/workflows/` wrap these actions and additional
 
 **`sample`** (`standalone`, `cmssw`, and `hlt`): `ttbar` (default when empty) or `qcd`. With `qcd`, `cmssw` and `hlt` use `step2_qcd_50Events.root` from the `ariostas/el9:qcd` image, and `standalone` uses `trackingNtuple_qcd.root` from the `ariostas/el9:standalone-qcd` image. Standalone passes it to LST as `-i QCD` through a symlink, because the input name ends up in the plot directory names and must not contain slashes. The archive dir, check name, and concurrency group get a `qcd` tag.
 
+**`procmodifiers-pr` / `procmodifiers-target`** (`cmssw` and `hlt`): Comma-separated process modifiers passed to `cmsDriver.py` for the PR and reference runs, so each gets its own generated config. They replace the defaults, so they must list every modifier wanted: in `cmssw` an empty value falls back to `trackingIters01,trackingLST`, and in `hlt` it means no procModifiers.
+
 **`runs-on: self-hosted`** vs hosted: Self-hosted runners have GPUs and pre-mounted CVMFS + data files at `/data2/segmentlinking/`. Hosted runners use Docker with CVMFS mounted and use `--accelerators cpu`.
 
 **CMSSW release selection**: Defaults to the latest nightly (`CMSSW_XX_Y_X_YYYY-MM-DD-HHMM`) by parsing `scram list CMSSW`. Can be overridden with the `release` input. Both full IBs (`cms/cmssw/`) and patch IBs (`cms/cmssw-patch/`) are matched. Patch IBs only contain the packages that changed w.r.t. their base full IB, so the standalone build sets `CMSSW_RELEASE_BASE=$CMSSW_FULL_RELEASE_BASE` to find the remaining headers (the other actions use a SCRAM developer area, which handles patch releases on its own).

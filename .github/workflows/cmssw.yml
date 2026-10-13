@@ -32,6 +32,14 @@ on:
         description: Comma-separated list of extra packages to add
         required: false
         type: string
+      procmodifiers-pr:
+        description: Comma-separated list of process modifiers for PR branch (defaults to trackingIters01,trackingLST)
+        required: false
+        type: string
+      procmodifiers-target:
+        description: Comma-separated list of process modifiers for target branch (defaults to trackingIters01,trackingLST)
+        required: false
+        type: string
     secrets:
       app-id:
         required: true
@@ -87,6 +95,8 @@ jobs:
           sample: ${{ inputs.sample }}
           release: ${{ inputs.release }}
           packages: ${{ inputs.packages }}
+          procmodifiers-pr: ${{ inputs.procmodifiers-pr }}
+          procmodifiers-target: ${{ inputs.procmodifiers-target }}
       - name: Upload plots to archival repo
         if: inputs.pr-number != '0'
         uses: SegmentLinking/TrackLooper-actions/upload-plots@main

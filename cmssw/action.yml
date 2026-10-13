@@ -22,6 +22,12 @@ inputs:
   packages:
     description: Comma-separated list of extra packages to add
     required: false
+  procmodifiers-pr:
+    description: Comma-separated list of process modifiers for PR branch (defaults to trackingIters01,trackingLST)
+    required: false
+  procmodifiers-target:
+    description: Comma-separated list of process modifiers for target branch (defaults to trackingIters01,trackingLST)
+    required: false
 outputs:
   archive-repo:
     description: The repository where the plots will be stored
@@ -54,6 +60,9 @@ runs:
           exit 1
         fi
         SAMPLE_STR="${{ inputs.sample == 'qcd' && ' on the QCD sample' || '' }}"
+        if [[ -n "$PROCMODIFIERS_PR" || -n "$PROCMODIFIERS_TARGET" ]]; then
+          PROCMODIFIERS_STR=" (procModifiers: PR = ${PROCMODIFIERS_PR:-trackingIters01,trackingLST}, target = ${PROCMODIFIERS_TARGET:-trackingIters01,trackingLST})"
+        fi
         ARCHIVE_REPO=${{ github.repository_owner }}/lst-performance-plots-archive-2026
         echo "archive-repo=$ARCHIVE_REPO" >> $GITHUB_OUTPUT
         ARCHIVE_BRANCH=main
@@ -61,7 +70,7 @@ runs:
         ARCHIVE_DIR=PR${PR_NUMBER}_$(git rev-parse --short HEAD)_$(date +%Y%m%d%H%M)_cmssw${{ inputs.sample == 'qcd' && '_qcd' || '' }}${{ inputs.low-pt == 'true' && '_lowpt' || '' }}_${CPU_OR_GPU,,}
         echo "archive-dir=$ARCHIVE_DIR" >> $GITHUB_OUTPUT
         COMMENT=$(cat <<EOF
-        The PR was built and ran successfully with CMSSW${LOW_PT} running on ${CPU_OR_GPU}${SAMPLE_STR}. Here are some plots.
+        The PR was built and ran successfully with CMSSW${LOW_PT} running on ${CPU_OR_GPU}${SAMPLE_STR}${PROCMODIFIERS_STR}. Here are some plots.
         <table>
           <tr>
             OOTB All Tracks
@@ -82,6 +91,8 @@ runs:
       env:
         PR_NUMBER: ${{ inputs.pr-number }}
         SAMPLE: ${{ inputs.sample }}
+        PROCMODIFIERS_PR: ${{ inputs.procmodifiers-pr }}
+        PROCMODIFIERS_TARGET: ${{ inputs.procmodifiers-target }}
     - name: Mount cvmfs
       if: inputs.runs-on != 'self-hosted'
       uses: cvmfs-contrib/github-action-cvmfs@v5
@@ -136,6 +147,8 @@ runs:
           -e REQUIRED_PRS \
           -e RELEASE \
           -e PACKAGES \
+          -e PROCMODIFIERS_PR \
+          -e PROCMODIFIERS_TARGET \
           ariostas/el9:${{ inputs.sample == 'qcd' && 'qcd' || 'cmssw' }} ./run.sh
       env:
         ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
@@ -147,6 +160,8 @@ runs:
         REQUIRED_PRS: ${{ inputs.required-prs }}
         RELEASE: ${{ inputs.release }}
         PACKAGES: ${{ inputs.packages }}
+        PROCMODIFIERS_PR: ${{ inputs.procmodifiers-pr }}
+        PROCMODIFIERS_TARGET: ${{ inputs.procmodifiers-target }}
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash
@@ -161,3 +176,5 @@ runs:
         REQUIRED_PRS: ${{ inputs.required-prs }}
         RELEASE: ${{ inputs.release }}
         PACKAGES: ${{ inputs.packages }}
+        PROCMODIFIERS_PR: ${{ inputs.procmodifiers-pr }}
+        PROCMODIFIERS_TARGET: ${{ inputs.procmodifiers-target }}
