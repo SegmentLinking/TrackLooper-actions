@@ -5,9 +5,15 @@ export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
-  CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw(-patch)?/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+  CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw(-patch)?/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -rV | head -n 1)
 else
   CMSSW_VERSION=$RELEASE
+fi
+
+if [[ "$SAMPLE" == "qcd" ]]; then
+  INPUT_FILE=/data2/segmentlinking/step2_qcd_50Events.root
+else
+  INPUT_FILE=/data2/segmentlinking/step2_34634.712_100Events.root
 fi
 
 # Print all commands and exit on error
@@ -19,6 +25,7 @@ scramv1 project CMSSW $CMSSW_VERSION
 cd $CMSSW_VERSION/src
 eval `scramv1 runtime -sh`
 git cms-init --upstream-only
+RELEASE_SHA=$(git rev-parse HEAD)
 git remote add SegLink https://github.com/SegmentLinking/cmssw.git
 git fetch SegLink
 if [[ -n "$TARGET_BRANCH" ]]; then
@@ -35,9 +42,14 @@ if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
   git checkout SegLink/master
 fi
 git switch -c reference_branch
+# Bring master up to the IB in case it is behind it (it is only synced from upstream twice a day).
+# Otherwise the packages checked out below would be older than the rest of the release.
+if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
+  git merge $RELEASE_SHA || (echo -e "***\nError: There are conflicts between the IB and master that need to be resolved.\n***" && false)
+fi
 # Merge reference branch into master/release in case they are different
 if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
-  git merge SegLink/$TARGET_BRANCH || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
+  git merge SegLink/$TARGET_BRANCH || (echo -e "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
@@ -66,7 +78,7 @@ for pkg in $PKGS; do
   git cms-addpkg $pkg
 done
 # Temporarily merge target branch
-git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge reference_branch --allow-unrelated-histories || (echo -e "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git cms-checkdeps -D
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
@@ -78,26 +90,33 @@ sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.g
 export SITECONFIG_PATH=$PWD/siteconf/local
 echo "Running 34634.712 (+LST) workflow..."
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
-cmsDriver.py step3 \
-  -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
-  --conditions auto:phase2_realistic_T35 \
-  --datatier GEN-SIM-RECO,DQMIO \
-  -n 100 \
-  --eventcontent RECOSIM,DQM \
-  --geometry ExtendedRun4D121 \
-  --era Phase2C22I13M9 \
-  --procModifiers trackingIters01,trackingLST \
-  $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
-  --nThreads $N_STREAMS \
-  --filein file:/data2/segmentlinking/step2_34634.712_100Events.root \
-  --fileout file:step3_out.root \
-  --no_exec
-if [[ "$LOW_PT" == "true" ]]; then
-  lineno=$(grep -n '^# Input source$' step3_RAW2DIGI_RECO_VALIDATION_DQM.py | head -n1 | cut -d: -f1)
-  lineno=$((lineno - 1))
-  sed -i "${lineno}r ../../lowpt_mod.py" step3_RAW2DIGI_RECO_VALIDATION_DQM.py
-fi
-cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+# Generate the step3 config, using the default procModifiers if none are given
+make_step3_config() {
+  local python_filename=$1
+  local procmodifiers=${2:-trackingIters01,trackingLST}
+  cmsDriver.py step3 \
+    -s RAW2DIGI,RECO:reconstruction_trackingOnly,VALIDATION:@trackingOnlyValidation,DQM:@trackingOnlyDQM \
+    --conditions auto:phase2_realistic_T35 \
+    --datatier GEN-SIM-RECO,DQMIO \
+    -n 100 \
+    --eventcontent RECOSIM,DQM \
+    --geometry ExtendedRun4D121 \
+    --era Phase2C22I13M9 \
+    --procModifiers $procmodifiers \
+    $([[ $RUNS_ON == "self-hosted" ]] && echo "" || echo "--accelerators cpu") \
+    --nThreads $N_STREAMS \
+    --filein file:$INPUT_FILE \
+    --fileout file:step3_out.root \
+    --python_filename $python_filename \
+    --no_exec
+  if [[ "$LOW_PT" == "true" ]]; then
+    lineno=$(grep -n '^# Input source$' $python_filename | head -n1 | cut -d: -f1)
+    lineno=$((lineno - 1))
+    sed -i "${lineno}r ../../lowpt_mod.py" $python_filename
+  fi
+}
+make_step3_config step3_pr.py "$PROCMODIFIERS_PR"
+cmsRun step3_pr.py
 cmsDriver.py step4 \
   -s HARVESTING:@trackingOnlyValidation+@trackingOnlyDQM \
   --conditions auto:phase2_realistic_T35 \
@@ -129,7 +148,8 @@ eval `scramv1 runtime -sh`
 scram b distclean
 scram b -r -j $MAXMAKETHREADS
 echo "Running 34634.712 (+LST) workflow..."
-cmsRun step3_RAW2DIGI_RECO_VALIDATION_DQM.py
+make_step3_config step3_target.py "$PROCMODIFIERS_TARGET"
+cmsRun step3_target.py
 cmsRun step4_HARVESTING.py
 mv DQM_V0001_R000000001__Global__CMSSW_X_Y_Z__RECO.root target_branch.root
 # Go back to the PR commit so that the git tag is consistent everywhere

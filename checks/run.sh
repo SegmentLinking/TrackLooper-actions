@@ -4,7 +4,7 @@
 export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
-CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw(-patch)?/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw(-patch)?/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -rV | head -n 1)
 
 # Print all commands and exit on error
 set -e -v
@@ -30,14 +30,14 @@ for pkg in "${PKGS[@]}"; do
   git cms-addpkg $pkg
 done
 # Add packages that changed in the PR
-PKGS=$(git diff --name-only reference_branch...pr_branch | awk -F/ 'NF>=2 {print $1"/"$2} NF<2 {print "."}' | sort -u)
+PKGS=$(git diff --name-only SegLink/${TARGET_BRANCH}...SegLink_cmssw | awk -F/ 'NF>=2 {print $1"/"$2} NF<2 {print "."}' | sort -u)
 for pkg in $PKGS; do
   echo "Adding changed package ${pkg}"
   git cms-addpkg $pkg
 done
 # Temporarily merge target branch
 git config user.email "gha@example.com" && git config user.name "GHA"
-git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
+git merge --no-commit --no-ff SegLink/${TARGET_BRANCH} || (echo -e "***\nError: There are merge conflicts that need to be resolved.\n***" && false)
 git commit -m "Temporary merge" || echo "Nothing to commit"
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
@@ -52,9 +52,9 @@ done
 eval `scramv1 runtime -sh`
 echo "Checking format"
 scram b code-format
-git diff --exit-code || (echo "***\nError: There are unformatted files. Please run 'scram b code-format'.\n***" && false)
+git diff --exit-code || (echo -e "***\nError: There are unformatted files. Please run 'scram b code-format'.\n***" && false)
 echo "Running checks"
 scram b -j 4 code-checks
-git diff --exit-code || (echo "***\nError: There are suggested changes. Please run 'scram b code-checks'.\n***" && false)
+git diff --exit-code || (echo -e "***\nError: There are suggested changes. Please run 'scram b code-checks'.\n***" && false)
 echo "Checking headers"
 scram b -j 4 check-headers

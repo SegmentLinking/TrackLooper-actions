@@ -10,9 +10,11 @@ The action in this directory tests the HLT integration of [LST](https://github.c
 | `required-prs` | Comma-separated list of required PR numbers that must be merged before checks are run | False |
 | `runs-on` | Runner where to run the workflow | False |
 | `low-pt` | Run the low pT setup | False |
+| `sample` | Sample to run on (ttbar or qcd, defaults to ttbar) | False |
 | `release` | CMSSW release to use | False |
 | `packages` | Comma-separated list of extra packages to add | False |
-| `procmodifiers` | Comma-separated list of process modifiers | False |
+| `procmodifiers-pr` | Comma-separated list of process modifiers for PR branch | False |
+| `procmodifiers-target` | Comma-separated list of process modifiers for target branch | False |
 
 ## Outputs
 

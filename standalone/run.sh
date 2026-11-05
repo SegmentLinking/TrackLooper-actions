@@ -5,7 +5,7 @@ export SCRAM_ARCH=el9_amd64_gcc14
 
 source /cvmfs/cms.cern.ch/cmsset_default.sh
 if [[ -z "$RELEASE" || "$RELEASE" == "latest" ]]; then
-  export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw(-patch)?/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -r | head -n 1)
+  export FORCED_CMSSW_VERSION=$(scram list CMSSW | grep -P "cmssw(-patch)?/CMSSW_\d{2}_\d{1,2}_X_\d{4}-\d{2}-\d{2}-\d{4}$" | awk -F'/' '{print $10}' | sort -rV | head -n 1)
 else
   export FORCED_CMSSW_VERSION=$RELEASE
 fi
@@ -30,9 +30,10 @@ else
   git checkout $RELEASE
 fi
 git switch -c reference_branch
+TARGET_SHA=$(git rev-parse HEAD)
 if [[ -n "$TARGET_BRANCH" && (-z "$RELEASE" || "$RELEASE" == "latest") ]]; then
   TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
-  git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
+  git merge origin/$TARGET_BRANCH --allow-unrelated-histories || (echo -e "***\nError: There are conflicts between target branch and master that need to be resolved.\n***" && false)
 fi
 # Merge required PRs
 CLEAN_LIST=$(echo "${REQUIRED_PRS}" | tr -d '[:space:]')
@@ -46,7 +47,7 @@ done
 # Go back to PR branch and merge reference
 git checkout pr_branch
 if [[ -n "$TARGET_BRANCH" ]]; then
-  git merge reference_branch --allow-unrelated-histories || (echo "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
+  git merge reference_branch --allow-unrelated-histories || (echo -e "***\nError: There are conflicts between target branch and PR branch that need to be resolved.\n***" && false)
 fi
 
 # Add extra packages
@@ -65,7 +66,7 @@ done
 
 # Download data files
 cd RecoTracker/LSTCore
-git clone --branch add_t33_maps https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
+git clone https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
 
 # Build and run the PR. Create validation plots
 cd standalone
@@ -80,12 +81,20 @@ echo "Building and LST..."
 export MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "3")
 LOW_PT_FLAG=$([[ $LOW_PT == "true" ]] && echo "--ptCut 0.6" || echo "")
 LST_BIN=$([[ $RUNS_ON == "self-hosted" ]] && echo "lst_cuda" || echo "lst_cpu")
+# PU200 is a predefined input that points to the ttbar sample. Other samples are passed through a
+# symlink without slashes in its name, since the input name ends up in the plot directory names
+if [[ "$SAMPLE" == "qcd" ]]; then
+  LST_INPUT=QCD
+  ln -sf ${TRACKINGNTUPLEDIR}/trackingNtuple_qcd.root $LST_INPUT
+else
+  LST_INPUT=PU200
+fi
 N_STREAMS=$([[ $RUNS_ON == "self-hosted" ]] && echo "1" || echo "4")
 lst_make_tracklooper -mAs
 echo "Running LST..."
 # Check out the real PR commit so that the git hash is correct
 git checkout $PR_HEAD_SHA
-$LST_BIN -i PU200 -o LSTNtuple_after.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_PR.txt
+$LST_BIN -i $LST_INPUT -o LSTNtuple_after.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_PR.txt
 # Exit early if we're just testing master
 if [[ -z "$TARGET_BRANCH" ]]; then
   exit 0
@@ -95,7 +104,7 @@ echo "Creating validation plots..."
 python3 efficiency/python/lst_plot_performance.py LSTNumDen_after.root -t "validation_plots"
 if [[ $RUNS_ON == "self-hosted" ]]; then
   echo "Running timing test"
-  lst_timing PU200 | tee -a ../../../timing_PR.txt
+  lst_timing $LST_INPUT | tee -a ../../../timing_PR.txt
 fi
 
 # Checkout the target branch so we can compare what has changed
@@ -115,13 +124,13 @@ lst_make_tracklooper $([[ $RUNS_ON == "self-hosted" ]] && echo "-mAs" || echo "-
 echo "Running LST..."
 # Check out the real target branch commit so that the git hash is correct
 git checkout $TARGET_SHA
-$LST_BIN -i PU200 -o LSTNtuple_before.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_target.txt
+$LST_BIN -i $LST_INPUT -o LSTNtuple_before.root -s $N_STREAMS -v 1 $LOW_PT_FLAG | tee -a ../../../timing_target.txt
 createPerfNumDenHists -i LSTNtuple_before.root -o LSTNumDen_before.root
 echo "Creating comparison plots..."
 python3 efficiency/python/lst_plot_performance.py --compare LSTNumDen_after.root LSTNumDen_before.root --comp_labels this_PR,target_branch -t "comparison_plots"
 if [[ $RUNS_ON == "self-hosted" ]]; then
   echo "Running timing test"
-  lst_timing PU200 | tee -a ../../../timing_target.txt
+  lst_timing $LST_INPUT | tee -a ../../../timing_target.txt
 fi
 
 # Copy a few plots that will be attached in the PR comment

@@ -1,0 +1,56 @@
+name: Upload Plots
+description: Uploads a directory with plots to the archive repository
+inputs:
+  repo:
+    description: The archive repository, of the form `owner/repo`
+    required: true
+  branch:
+    description: The branch of the archive repository
+    required: true
+  dir:
+    description: The directory in the workspace to upload. It is stored under the same name in the archive repository
+    required: true
+  ssh-private-key:
+    description: Deploy key with write access to the archive repository
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Push plots to archive repository
+      shell: bash
+      run: |
+        KEY_FILE="$RUNNER_TEMP/archive_deploy_key"
+        KNOWN_HOSTS="$RUNNER_TEMP/archive_known_hosts"
+        CLONE_DIR="$RUNNER_TEMP/archive_repo"
+        trap 'rm -rf "$KEY_FILE" "$KNOWN_HOSTS" "$CLONE_DIR"' EXIT
+        (umask 077 && printf '%s\n' "$SSH_PRIVATE_KEY" > "$KEY_FILE")
+        # GitHub's SSH host key, from https://api.github.com/meta
+        echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" > "$KNOWN_HOSTS"
+        export GIT_SSH_COMMAND="ssh -i $KEY_FILE -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$KNOWN_HOSTS"
+
+        # The archive is large, so only fetch the latest commit and check out just the new directory
+        rm -rf "$CLONE_DIR"
+        git clone --depth 1 --filter=blob:none --sparse --branch "$ARCHIVE_BRANCH" "git@github.com:$ARCHIVE_REPO.git" "$CLONE_DIR"
+        cd "$CLONE_DIR"
+        git sparse-checkout set "$ARCHIVE_DIR"
+        mkdir -p "$ARCHIVE_DIR"
+        cp -r "$GITHUB_WORKSPACE/$ARCHIVE_DIR/." "$ARCHIVE_DIR/"
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add "$ARCHIVE_DIR"
+        git commit -q -m "Add $ARCHIVE_DIR"
+
+        # Other jobs might push at the same time, so retry on top of the latest commit
+        for attempt in 1 2 3 4 5; do
+          git push origin "HEAD:$ARCHIVE_BRANCH" && exit 0
+          sleep $((attempt * 5))
+          git fetch --depth 1 origin "$ARCHIVE_BRANCH"
+          git rebase --onto FETCH_HEAD HEAD~1
+        done
+        echo "Failed to push to $ARCHIVE_REPO"
+        exit 1
+      env:
+        ARCHIVE_REPO: ${{ inputs.repo }}
+        ARCHIVE_BRANCH: ${{ inputs.branch }}
+        ARCHIVE_DIR: ${{ inputs.dir }}
+        SSH_PRIVATE_KEY: ${{ inputs.ssh-private-key }}

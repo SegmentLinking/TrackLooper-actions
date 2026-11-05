@@ -1,0 +1,5 @@
+FROM cmssw/el9:x86_64
+
+ADD trackingNtuple_qcd.root /data2/segmentlinking/CMSSW_12_2_0_pre2/
+
+CMD ["bash"]
