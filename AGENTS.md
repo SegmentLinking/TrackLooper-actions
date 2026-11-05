@@ -14,6 +14,7 @@ Each top-level directory (except `Dockerfiles`) is a self-contained composite Gi
 
 - **`checks/`** — Runs SCRAM static checks (`code-format`, `code-checks`, `check-headers`) inside a Docker container with CVMFS mounted. Uses `cmssw/el9:x86_64`.
 - **`standalone/`** — Builds and runs the standalone LST code (from `RecoTracker/LSTCore/standalone`) against PU200 sample, generates efficiency/fake-rate/duplicate-rate comparison plots between the PR branch and target branch. Uses `ariostas/el9:standalone`.
+- **`standalone-maps/`** — Generates the module maps with `RecoTracker/LSTGeometry` (`dumpLSTGeometry.py`) for the reference and PR branches and uploads them as an artifact for `standalone`. Maps are cached by the git tree hash of `RecoTracker/LSTGeometry`, so they are only regenerated when that package changes. Uses `cmssw/el9:x86_64`.
 - **`cmssw/`** — Builds the CMSSW integration and runs workflow 34634.712 (Phase-2 tracking reconstruction), generates DQM comparison plots. Uses `ariostas/el9:cmssw`.
 - **`hlt/`** — Builds and runs the HLT workflow (Phase2 L1P2GT+HLT:75e33), generates HLT tracking comparison plots. Uses `ariostas/el9:hlt`.
 - **`upload-plots/`** — Pushes a plots directory to the archive repo using an SSH deploy key (shallow, sparse clone since the archive is large; retries the push if other jobs push concurrently).
@@ -36,6 +37,8 @@ The reusable workflows in `.github/workflows/` wrap these actions and additional
 **Branch strategy**: Each script constructs two git branches — `reference_branch` (target branch + required PRs merged in) and `pr_branch` (the PR head). It runs the test on both, then generates comparison plots.
 
 **IB vs. master skew** (`cmssw` and `hlt`): The SCRAM area is an IB, but the packages that get checked out (LST, plus everything the PR touches) come from `SegLink/master`, which is only synced from upstream every 12 hours and can therefore be older than the IB. When upstream moves code between packages in that window, the checked-out packages and the IB disagree. For example, cms-sw/cmssw#52080 moved the Phase-2 `keep` statements of FEVTDEBUGHLT from `Configuration/EventContent` to `HLTrigger/Configuration`, so a PR touching `HLTrigger/Configuration` got neither copy and `hltGeneralTracks` was silently dropped from the output, leaving the validation plots empty. To avoid this, the IB commit is merged into `reference_branch` right after checking out master, so the reference is never older than the IB.
+
+**Module maps** (`standalone`): In the `standalone.yml` workflow, a `maps` job (always on `ubuntu-latest`) runs `standalone-maps` before the test job. `prepare.sh` builds `reference_branch` and `pr_branch` (in a blobless, sparse clone) and compares the tree hashes of `RecoTracker/LSTGeometry`; each version's maps are restored from `actions/cache` or generated and saved. If the PR doesn't change LSTGeometry, the reference maps are used for both branches. The test job downloads the artifact and passes it as `maps-dir`, and `run.sh` copies `pr/` or `reference/` into `RecoTracker/LSTCore/data` before each build. Without `maps-dir`, `run.sh` still clones the RecoTracker-LSTCore data repo. The cache key doesn't include the IB, so bump `MAPS_CACHE_VERSION` in `standalone-maps/action.yml` if the tracker geometry changes. The in-progress check is created by the `maps` job (so it shows up right away) and its ID is passed to the test job, which updates that same check (by `check_id`) instead of creating a new one; it only creates one by name if the `maps` job failed before making it. If the `maps` job is cancelled, it closes the check itself, since the test job is skipped.
 
 **`pr-number: 0`**: Special case — uses `master` branch and skips comparison (no target branch, no PR comment).
 
@@ -64,4 +67,4 @@ To rebuild and push an image after updating data files, see `Dockerfiles/README.
 
 ## Dependabot
 
-Configured to monthly update GitHub Actions pinned versions in `.github/workflows/`, `standalone/`, `cmssw/`, `hlt/`, and `checks/` directories (grouped as `actions`).
+Configured to monthly update GitHub Actions pinned versions in `.github/workflows/`, `standalone/`, `standalone-maps/`, `cmssw/`, `hlt/`, and `checks/` directories (grouped as `actions`).

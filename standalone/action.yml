@@ -22,6 +22,9 @@ inputs:
   packages:
     description: Comma-separated list of extra packages to add
     required: false
+  maps-dir:
+    description: Directory (relative to the workspace) with the module maps for the reference and PR branches, in `reference/` and `pr/` subdirectories. If empty, the maps are taken from the RecoTracker-LSTCore data repository
+    required: false
 outputs:
   archive-repo:
     description: The repository where the plots will be stored
@@ -104,6 +107,7 @@ runs:
           -e REQUIRED_PRS \
           -e RELEASE \
           -e PACKAGES \
+          -e MAPS_DIR \
           ariostas/el9:${{ inputs.sample == 'qcd' && 'standalone-qcd' || 'standalone' }} ./run.sh
       env:
         ARCHIVE_DIR: ${{ steps.output-vars.outputs.archive-dir }}
@@ -114,6 +118,7 @@ runs:
         REQUIRED_PRS: ${{ inputs.required-prs }}
         RELEASE: ${{ inputs.release }}
         PACKAGES: ${{ inputs.packages }}
+        MAPS_DIR: ${{ inputs.maps-dir }}
     - name: Build and run
       if: inputs.runs-on == 'self-hosted'
       shell: bash
@@ -127,6 +132,7 @@ runs:
         REQUIRED_PRS: ${{ inputs.required-prs }}
         RELEASE: ${{ inputs.release }}
         PACKAGES: ${{ inputs.packages }}
+        MAPS_DIR: ${{ inputs.maps-dir }}
     - name: Set output comment
       id: output-comment
       shell: bash

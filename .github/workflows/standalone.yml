@@ -42,8 +42,98 @@ on:
 
 
 jobs:
+  maps:
+    name: Generate module maps for ${{ inputs.pr-number != '0' && format('PR{0}', inputs.pr-number) || 'master' }}
+    # Map generation only needs CPU, so it always runs on a hosted runner
+    runs-on: ubuntu-latest
+    concurrency:
+      group: lst-standalone-maps-PR${{ inputs.pr-number }}-${{ inputs.runs-on }}${{ inputs.sample == 'qcd' && '-qcd' || '' }}${{ inputs.low-pt == 'true' && '-lowpt' || '' }}
+      cancel-in-progress: true
+    outputs:
+      # Artifacts are shared by the whole run, which can call this workflow several times
+      artifact-name: lst-maps-PR${{ inputs.pr-number }}-${{ inputs.runs-on }}${{ inputs.sample == 'qcd' && '-qcd' || '' }}${{ inputs.low-pt == 'true' && '-lowpt' || '' }}
+      # The check is created here so that it shows up as soon as the workflow starts. The test job updates it
+      check-id: ${{ steps.check.outputs.check_id }}
+    steps:
+      - name: Create App Token
+        uses: actions/create-github-app-token@v3
+        id: app-token
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+          skip-token-revoke: true
+      - name: Get commit SHA
+        uses: actions/github-script@v9
+        id: sha
+        with:
+          result-encoding: string
+          script: |
+            if ("${{ inputs.pr-number }}" === "0") {
+              const { data: branch } = await github.rest.repos.getBranch({
+                owner: context.repo.owner,
+                repo: "cmssw",
+                branch: "master",
+              });
+              return branch.commit.sha;
+            }
+            const { data: pullRequest } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: "cmssw",
+              pull_number: "${{ inputs.pr-number }}",
+            });
+            return pullRequest.head.sha;
+      - name: Create in progress check
+        uses: LouisBrunner/checks-action@v3.1.0
+        id: check
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          sha: ${{ steps.sha.outputs.result }}
+          name: Run Standalone ${{ inputs.sample == 'qcd' && 'QCD' || 'PU200' }}${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          status: in_progress
+          details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "Generating module maps...", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
+      - name: Check out PR
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.pr-number != '0' && format('refs/pull/{0}/head', inputs.pr-number) || 'master' }}
+          # Full history is needed to merge the branches, but blobs are only fetched when needed
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            RecoTracker/LSTGeometry
+      - name: Generate or restore maps
+        uses: SegmentLinking/TrackLooper-actions/standalone-maps@devel
+        with:
+          pr-number: ${{ inputs.pr-number }}
+          required-prs: ${{ inputs.required-prs }}
+          low-pt: ${{ inputs.low-pt }}
+          release: ${{ inputs.release }}
+          artifact-name: lst-maps-PR${{ inputs.pr-number }}-${{ inputs.runs-on }}${{ inputs.sample == 'qcd' && '-qcd' || '' }}${{ inputs.low-pt == 'true' && '-lowpt' || '' }}
+      # If this job is cancelled the test job is skipped, so the check has to be closed here
+      - name: Create App Token
+        if: cancelled() && steps.check.outputs.check_id != ''
+        uses: actions/create-github-app-token@v3
+        id: app-token-end
+        with:
+          app-id: ${{ secrets.app-id }}
+          private-key: ${{ secrets.app-private-key }}
+      - name: Create cancelled check
+        if: cancelled() && steps.check.outputs.check_id != ''
+        uses: LouisBrunner/checks-action@v3.1.0
+        with:
+          token: ${{ steps.app-token-end.outputs.token }}
+          check_id: ${{ steps.check.outputs.check_id }}
+          conclusion: cancelled
+          details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          output: |
+            {"title": "Status: cancelled", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
+
   test:
     name: Run standalone tests for ${{ inputs.pr-number != '0' && format('PR{0}', inputs.pr-number) || 'master' }}
+    needs: maps
+    # Still run if the maps job failed, so that the failure is reported in the check and PR comment
+    if: ${{ !cancelled() }}
     runs-on: ${{ inputs.runs-on }}
     # One group per check, so re-running a check cancels the previous run of that same check
     concurrency:
@@ -68,16 +158,23 @@ jobs:
           app-id: ${{ secrets.app-id }}
           private-key: ${{ secrets.app-private-key }}
           skip-token-revoke: true
-      - name: Create in progress check
+      # Normally the check was already created by the maps job. Only create it here if that job failed early
+      - name: Update in progress check
         uses: LouisBrunner/checks-action@v3.1.0
         with:
           token: ${{ steps.app-token.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
-          name: Run Standalone ${{ inputs.sample == 'qcd' && 'QCD' || 'PU200' }}${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          check_id: ${{ needs.maps.outputs.check-id }}
+          name: ${{ needs.maps.outputs.check-id == '' && format('Run Standalone {0}{1}{2}', inputs.sample == 'qcd' && 'QCD' || 'PU200', inputs.runs-on == 'self-hosted' && ' (GPU)' || '', inputs.low-pt == 'true' && ' (low pT setup)' || '') || '' }}
           status: in_progress
           details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           output: |
-            {"title": "This check has started...", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
+            {"title": "Building and running...", "summary": "The logs can be found [here](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})."}
+      - name: Download maps
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ needs.maps.outputs.artifact-name }}
+          path: lst-maps
       - name: Build and run PR
         timeout-minutes: 60
         id: build-and-run
@@ -90,6 +187,7 @@ jobs:
           sample: ${{ inputs.sample }}
           release: ${{ inputs.release }}
           packages: ${{ inputs.packages }}
+          maps-dir: lst-maps
       - name: Upload plots to archival repo
         if: inputs.pr-number != '0'
         uses: SegmentLinking/TrackLooper-actions/upload-plots@main
@@ -135,7 +233,8 @@ jobs:
         with:
           token: ${{ steps.app-token-end.outputs.token }}
           sha: ${{ env.COMMIT_SHA }}
-          name: Run Standalone ${{ inputs.sample == 'qcd' && 'QCD' || 'PU200' }}${{ inputs.runs-on == 'self-hosted' && ' (GPU)' || '' }}${{ inputs.low-pt == 'true' && ' (low pT setup)' || '' }}
+          check_id: ${{ needs.maps.outputs.check-id }}
+          name: ${{ needs.maps.outputs.check-id == '' && format('Run Standalone {0}{1}{2}', inputs.sample == 'qcd' && 'QCD' || 'PU200', inputs.runs-on == 'self-hosted' && ' (GPU)' || '', inputs.low-pt == 'true' && ' (low pT setup)' || '') || '' }}
           conclusion: ${{ job.status }}
           details_url: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           output: |

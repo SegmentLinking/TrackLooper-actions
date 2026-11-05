@@ -1,0 +1,182 @@
+name: Standalone Module Maps
+description: Generates the LST module maps with LSTGeometry for the reference and PR branches and uploads them as an artifact
+inputs:
+  pr-number:
+    description: PR number (if 0, use master)
+    required: true
+  required-prs:
+    description: Comma-separated list of required PR numbers that must be merged before checks are run
+    required: false
+  low-pt:
+    description: Generate the maps for the low pT setup
+    required: false
+  release:
+    description: CMSSW release to use
+    required: false
+  artifact-name:
+    description: Name of the artifact where the maps will be uploaded
+    required: true
+outputs:
+  changed:
+    description: Whether the PR changes LSTGeometry (and therefore has its own maps)
+    value: ${{ steps.prepare.outputs.changed }}
+runs:
+  using: composite
+  steps:
+    - name: Set variables
+      shell: bash
+      run: |
+        cp ${{ github.action_path }}/prepare.sh ${{ github.action_path }}/generate.sh ${{ github.workspace }}
+        echo "RUNNER_UID=$(id -u)" >> $GITHUB_ENV
+        echo "RUNNER_GID=$(id -g)" >> $GITHUB_ENV
+        echo "PT_CUT=${{ inputs.low-pt == 'true' && '0.6' || '0.8' }}" >> $GITHUB_ENV
+        # Bump this to invalidate all the cached maps (e.g. if the tracker geometry changes in the IBs)
+        echo "MAPS_CACHE_VERSION=v1" >> $GITHUB_ENV
+    - name: Get PR target branch
+      if: inputs.pr-number != '0'
+      id: get_target_branch
+      uses: actions/github-script@v9
+      with:
+        result-encoding: string
+        script: |
+          const { data: pullRequest } = await github.rest.pulls.get({
+            owner: context.repo.owner,
+            repo: "cmssw",
+            pull_number: "${{ inputs.pr-number }}",
+          });
+          return pullRequest.base.ref;
+    - name: Prepare branches
+      id: prepare
+      shell: bash
+      run: ./prepare.sh
+      env:
+        TARGET_BRANCH: ${{ steps.get_target_branch.outputs.result }}
+        REQUIRED_PRS: ${{ inputs.required-prs }}
+        RELEASE: ${{ inputs.release }}
+    - name: Look up cached reference maps
+      id: ref-lookup
+      uses: actions/cache/restore@v6
+      with:
+        path: lst-maps-cache
+        key: lst-maps-${{ env.MAPS_CACHE_VERSION }}-${{ steps.prepare.outputs.ref-tree }}-pt${{ env.PT_CUT }}
+        lookup-only: true
+    - name: Look up cached PR maps
+      id: pr-lookup
+      if: steps.prepare.outputs.changed == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: lst-maps-cache
+        key: lst-maps-${{ env.MAPS_CACHE_VERSION }}-${{ steps.prepare.outputs.pr-tree }}-pt${{ env.PT_CUT }}
+        lookup-only: true
+    - name: Check if maps need to be generated
+      id: need-gen
+      shell: bash
+      run: |
+        NEED_GEN=${{ steps.ref-lookup.outputs.cache-hit != 'true' || (steps.prepare.outputs.changed == 'true' && steps.pr-lookup.outputs.cache-hit != 'true') }}
+        echo "Maps need to be generated: $NEED_GEN"
+        echo "result=$NEED_GEN" >> $GITHUB_OUTPUT
+    - name: Mount cvmfs
+      if: steps.need-gen.outputs.result == 'true'
+      uses: cvmfs-contrib/github-action-cvmfs@v5
+      with:
+        cvmfs_repositories: "cms.cern.ch,cms-ib.cern.ch"
+    # For some reason we need to interact with cvmfs before using it in Docker because otherwise it fails
+    - name: List files in cvmfs to get it started
+      if: steps.need-gen.outputs.result == 'true'
+      shell: bash
+      run: |
+        ls /cvmfs/cms.cern.ch/ > /dev/null
+        ls /cvmfs/cms-ib.cern.ch/ > /dev/null
+        docker pull cmssw/el9:x86_64
+
+    # Reference maps
+    - name: Restore cached reference maps
+      if: steps.ref-lookup.outputs.cache-hit == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: lst-maps-cache
+        key: lst-maps-${{ env.MAPS_CACHE_VERSION }}-${{ steps.prepare.outputs.ref-tree }}-pt${{ env.PT_CUT }}
+        fail-on-cache-miss: true
+    - name: Generate reference maps
+      if: steps.ref-lookup.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/home/TrackLooper \
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
+          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
+          -w /home/TrackLooper \
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
+          -e TARBALL \
+          -e OUTPUT_DIR \
+          -e PT_CUT \
+          -e RELEASE \
+          cmssw/el9:x86_64 ./generate.sh
+      env:
+        TARBALL: lstgeometry_reference.tar
+        OUTPUT_DIR: lst-maps-cache
+        RELEASE: ${{ inputs.release }}
+    - name: Save reference maps to cache
+      if: steps.ref-lookup.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: lst-maps-cache
+        key: lst-maps-${{ env.MAPS_CACHE_VERSION }}-${{ steps.prepare.outputs.ref-tree }}-pt${{ env.PT_CUT }}
+    - name: Move reference maps
+      shell: bash
+      run: |
+        rm -rf lst-maps
+        mkdir lst-maps
+        mv lst-maps-cache lst-maps/reference
+
+    # PR maps (only if the PR changes LSTGeometry)
+    - name: Restore cached PR maps
+      if: steps.prepare.outputs.changed == 'true' && steps.pr-lookup.outputs.cache-hit == 'true'
+      uses: actions/cache/restore@v6
+      with:
+        path: lst-maps-cache
+        key: lst-maps-${{ env.MAPS_CACHE_VERSION }}-${{ steps.prepare.outputs.pr-tree }}-pt${{ env.PT_CUT }}
+        fail-on-cache-miss: true
+    - name: Generate PR maps
+      if: steps.prepare.outputs.changed == 'true' && steps.pr-lookup.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        docker run --rm \
+          -v ${{ github.workspace }}:/home/TrackLooper \
+          -v /cvmfs/cms.cern.ch:/cvmfs/cms.cern.ch \
+          -v /cvmfs/cms-ib.cern.ch:/cvmfs/cms-ib.cern.ch \
+          -w /home/TrackLooper \
+          -u ${{ env.RUNNER_UID }}:${{ env.RUNNER_GID }} \
+          -e TARBALL \
+          -e OUTPUT_DIR \
+          -e PT_CUT \
+          -e RELEASE \
+          cmssw/el9:x86_64 ./generate.sh
+      env:
+        TARBALL: lstgeometry_pr.tar
+        OUTPUT_DIR: lst-maps-cache
+        RELEASE: ${{ inputs.release }}
+    - name: Save PR maps to cache
+      if: steps.prepare.outputs.changed == 'true' && steps.pr-lookup.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: lst-maps-cache
+        key: lst-maps-${{ env.MAPS_CACHE_VERSION }}-${{ steps.prepare.outputs.pr-tree }}-pt${{ env.PT_CUT }}
+    - name: Move PR maps
+      shell: bash
+      run: |
+        if [[ "${{ steps.prepare.outputs.changed }}" == "true" ]]; then
+          mv lst-maps-cache lst-maps/pr
+        else
+          cp -r lst-maps/reference lst-maps/pr
+        fi
+        ls -lR lst-maps
+
+    - name: Upload maps
+      uses: actions/upload-artifact@v7
+      with:
+        name: ${{ inputs.artifact-name }}
+        path: lst-maps
+        retention-days: 1
+        overwrite: true
+        if-no-files-found: error
