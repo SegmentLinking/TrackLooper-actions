@@ -28,6 +28,13 @@ tar -xf $WORKDIR/$TARBALL
 scram b -j 4
 
 cd $WORKDIR
+# The conditions are loaded through the GlobalTag, which needs a site-local config. The container
+# doesn't have one, so use the one from cms-sw (without the proxies), like the cmssw and hlt actions
+if [[ ! -d siteconf ]]; then
+  git clone https://github.com/cms-sw/siteconf.git
+  sed -i '/<prefer ipfamily="0"\/>/,/<backupproxy url="http:\/\/cmsbproxy\.fnal\.gov:3128"\/>/d' siteconf/local/JobConfig/site-local-config.xml
+fi
+export SITECONFIG_PATH=$PWD/siteconf/local
 MAPS_SUBDIR=$OUTPUT_DIR/OT800_IT615_pt$PT_CUT
 rm -rf $OUTPUT_DIR
 mkdir -p $MAPS_SUBDIR
