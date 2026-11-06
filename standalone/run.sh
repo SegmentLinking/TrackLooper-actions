@@ -64,9 +64,17 @@ for pkg in $PKGS; do
   git sparse-checkout add $pkg
 done
 
-# Download data files
+# Get the module maps. Either the ones generated with LSTGeometry, or the ones in the data repository
+if [[ -n "$MAPS_DIR" ]]; then
+  MAPS_DIR=$(realpath $MAPS_DIR)
+fi
 cd RecoTracker/LSTCore
-git clone https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
+if [[ -n "$MAPS_DIR" ]]; then
+  rm -rf data
+  cp -r $MAPS_DIR/pr data
+else
+  git clone https://github.com/SegmentLinking/RecoTracker-LSTCore.git data
+fi
 
 # Build and run the PR. Create validation plots
 cd standalone
@@ -109,6 +117,11 @@ fi
 
 # Checkout the target branch so we can compare what has changed
 git checkout reference_branch
+# Switch to the reference maps if they were generated for each branch
+if [[ -n "$MAPS_DIR" ]]; then
+  rm -rf ../data
+  cp -r $MAPS_DIR/reference ../data
+fi
 
 # Build and run target. Create comparison plots
 echo "Running setup script..."

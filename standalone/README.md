@@ -10,8 +10,10 @@ The action in this directory tests the standalone version of [LST](https://githu
 | `required-prs` | Comma-separated list of required PR numbers that must be merged before checks are run | False |
 | `runs-on` | Runner where to run the workflow | False |
 | `low-pt` | Run the low pT setup | False |
+| `sample` | Sample to run on (`ttbar` or `qcd`, defaults to `ttbar`) | False |
 | `release` | CMSSW release to use | False |
 | `packages` | Comma-separated list of extra packages to add | False |
+| `maps-dir` | Directory (relative to the workspace) with the module maps for the reference and PR branches, in `reference/` and `pr/` subdirectories, as produced by the [standalone-maps action](../standalone-maps). If empty, the maps are taken from the RecoTracker-LSTCore data repository | False |
 
 ## Outputs
 
