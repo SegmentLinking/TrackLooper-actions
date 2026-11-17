@@ -82,7 +82,7 @@ git merge reference_branch --allow-unrelated-histories || (echo -e "***\nError: 
 git cms-checkdeps -D
 eval `scramv1 runtime -sh`
 echo "Building CMSSW..."
-MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "4")
+MAXMAKETHREADS=$([[ $RUNS_ON == "self-hosted" ]] && echo "16" || echo "3")
 scram b -r -j $MAXMAKETHREADS
 echo "Setting up siteconf..."
 git clone https://github.com/cms-sw/siteconf.git
